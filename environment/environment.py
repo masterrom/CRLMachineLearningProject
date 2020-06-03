@@ -54,12 +54,15 @@ class baseSetup:
         point.up()
 
 class section:
-    def __init__(self, sectionLen):
+    def __init__(self, sectionLen, maxSectionLen):
         self.section = turtle.Turtle()
         self.section.color('red')
-        self.sectionLen = sectionLen
-        self.zero = 0.00001
 
+        self.sectionLen = sectionLen
+        self.minSectionLen = sectionLen
+        self.maxSectionLen = maxSectionLen
+
+        self.zero = 0.00001
         self.leftLimit = 1.9 * math.pi
         self.currentAngle = self.zero
 
@@ -91,6 +94,25 @@ class section:
 
         self.drawSection(self.currentAngle)
 
+    def extendArm(self):
+        if self.sectionLen == self.maxSectionLen:
+            assert "Section max length has reached"
+            return
+        else:
+            self.sectionLen += 1
+
+        self.drawSection(self.currentAngle)
+        return
+
+    def contractArm(self):
+        if self.sectionLen == self.minSectionLen:
+            assert "Section min length has reached"
+            return
+        else:
+            self.sectionLen -= 1
+        self.drawSection(self.currentAngle)
+        return
+
     def drawSection(self, angle):
 
         self.section.clear()
@@ -116,15 +138,16 @@ base = baseSetup()
 base.drawGround()
 
 arcLength = 100
-sec = section(arcLength)
+sec = section(arcLength, 120)
 
 base.generatePoint((59.28806122141136, 70.38926642774715))
 
 angles = np.arange(0.1, 2 * math.pi, 0.1).tolist()
 
 while True:
+    print("l - move left | r - move right | e - extend | c - contract")
     try:
-        direction = str(raw_input("Enter Direction (l/r): "))
+        direction = str(raw_input("Enter Direction (l/r/e/c): "))
     except KeyboardInterrupt:
         exit()
     print(direction)
@@ -132,3 +155,7 @@ while True:
         sec.stepLeft()
     elif direction == 'r':
         sec.stepRight()
+    elif direction == 'e':
+        sec.extendArm()
+    elif direction == 'c':
+        sec.contractArm()
