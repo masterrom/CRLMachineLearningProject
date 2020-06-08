@@ -227,7 +227,7 @@ class Environment:
 
             c = math.sqrt(a ** 2 + b ** 2)
             print('C val', c)
-            if c <= 0.05:
+            if c <= 0.5:
                 self.capPoints += 1
                 pCap = i
                 print("Captured Point: Points ", self.capPoints)
