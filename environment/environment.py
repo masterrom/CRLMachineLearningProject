@@ -1,7 +1,9 @@
 #!/usr/bin/env python
-
+import time
 import turtle
 import math
+import random
+
 import numpy as np
 import ipdb
 
@@ -35,9 +37,9 @@ class section:
         if self.currentAngle == self.zero:
             self.currentAngle = 0
 
-        self.currentAngle += 0.1
+        self.currentAngle += 0.01
         if self.currentAngle == self.leftLimit:
-            self.currentAngle -= 0.1
+            self.currentAngle -= 0.01
             print("Left angle limit reached", self.currentAngle)
             return
 
@@ -48,9 +50,9 @@ class section:
         if self.currentAngle == self.zero:
             self.currentAngle = 0
 
-        self.currentAngle -= 0.1
+        self.currentAngle -= 0.01
         if self.currentAngle == -self.leftLimit:
-            self.currentAngle += 0.1
+            self.currentAngle += 0.01
             print("Right angle limit reached", self.currentAngle)
             return
 
@@ -80,6 +82,7 @@ class section:
 
         self.section.clear()
         self.section.hideturtle()
+        wn.tracer(self.sectionLen)
         if angle == 0:
             angle = self.zero
 
@@ -100,14 +103,20 @@ class section:
     def getTipPos(self):
         return self.tipPos
 
+    def getReachRange(self):
+        # At max Section Len
+
+        # At min Section Len
+
+        return
+
     def displayCurve(self):
 
         tool = self.curve
         tool.clear()
         tool.hideturtle()
 
-        ang = np.linspace(0, 2 * math.pi, 500)
-        negAng = np.linspace(0, -2 * math.pi, 500)
+        ang = np.linspace(-2 * math.pi, 2 * math.pi, 500)
 
         for i in range(len(ang)):
             angle = ang[i]
@@ -119,15 +128,6 @@ class section:
             self.curve.goto(x[len(x) - 1] - radius, y[len(x) - 1])
             self.curve.dot(2, 'green')
             self.curve.up()
-
-            angle = negAng[i]
-            radius = self.sectionLen / angle
-
-            t = np.linspace(0, angle, self.sectionLen)
-            x = radius * np.cos(t)
-            y = radius * np.sin(t)
-            self.curve.goto(x[len(x) - 1] - radius, y[len(x) - 1])
-            self.curve.dot(2, 'green')
 
 
 class Environment:
@@ -141,6 +141,10 @@ class Environment:
         self.robot = robot
         self.capPoints = 0
         self.points = []
+
+        self.rewardTool = turtle.Turtle()
+        self.rewardTool.hideturtle()
+        self.drawReward()
 
     def drawTaskSpace(self):
         # global wn
@@ -201,9 +205,17 @@ class Environment:
         self.ground.up()
         self.ground.home()
 
+    def drawReward(self):
+        self.rewardTool.clear()
+        self.rewardTool.color('black')
+        self.rewardTool.up()
+        self.rewardTool.setpos(0, -50)
+        self.rewardTool.down()
+        self.rewardTool.write("Points: " + str(self.capPoints), align='center')
+
     def pointCapture(self):
         tipPos = self.robot.getTipPos()
-
+        print("in here")
         pCap = None
         for i in range(len(self.points)):
             # Get Distance
@@ -214,6 +226,7 @@ class Environment:
             b = pos[1] - tipPos[1]
 
             c = math.sqrt(a ** 2 + b ** 2)
+            print('C val', c)
             if c <= 0.05:
                 self.capPoints += 1
                 pCap = i
@@ -222,8 +235,25 @@ class Environment:
         if pCap is not None:
             self.points[pCap].clear()
             self.points.pop(pCap)
+            self.drawReward()
 
-    def generatePoint(self, p):
+    def generatePoint(self):
+        angle = random.uniform(-2 * math.pi, 2 * math.pi)
+        maxArcLen = robot.maxSectionLen
+        minArcLen = robot.minSectionLen
+
+        arcLen = random.randint(minArcLen, maxArcLen)
+
+        radius = arcLen / angle
+
+        t = np.linspace(0, angle, arcLen)
+        x = radius * np.cos(t)
+        y = radius * np.sin(t)
+
+        return [x[arcLen - 1] - radius, y[arcLen - 1]]
+
+    def makePoint(self):
+        p = self.generatePoint()
         point = turtle.Turtle()
         point.hideturtle()
         point.up()
@@ -236,30 +266,46 @@ class Environment:
         point.up()
 
 
-arcLength = 100
-robot = section(arcLength, 120)
+if __name__ == '__main__':
 
-base = Environment(robot)
-base.drawGround()
+    arcLength = 100
+    robot = section(arcLength, 120)
 
-base.generatePoint((59.28806122141136, 70.38926642774715))
-print(base.points)
-angles = np.arange(0.1, 2 * math.pi, 0.1).tolist()
+    base = Environment(robot)
+    base.drawGround()
 
-while True:
-    print("l - move left | r - move right | e - extend | c - contract")
-    try:
-        direction = str(input("Enter Direction (l/r/e/c): "))
-    except KeyboardInterrupt:
-        exit()
-    print(direction)
-    if direction == 'l':
-        robot.stepLeft()
-    elif direction == 'r':
-        robot.stepRight()
-    elif direction == 'e':
-        robot.extendArm()
-    elif direction == 'c':
-        robot.contractArm()
+    base.makePoint()
+    print(base.points)
+    angles = np.arange(0.1, 2 * math.pi, 0.1).tolist()
 
-    base.pointCapture()
+    commandDict = {'l': robot.stepLeft,
+                   'r': robot.stepRight,
+                   'e': robot.extendArm,
+                   'c': robot.contractArm}
+
+    while True:
+        print("l - move left | r - move right | e - extend | c - contract")
+        print("Input Format: (l/r/e/c) <number of Steps in this direction>")
+        try:
+            direction = str(input("Enter Direction (l/r/e/c) #steps: "))
+        except KeyboardInterrupt:
+            exit()
+
+        command = direction.split(' ')
+        direction = command[0]
+        steps = int(command[1])
+        wn.tracer(100)
+        for i in range(steps):
+            commandDict[direction]()
+
+
+        # if direction == 'l':
+        #     robot.stepLeft()
+        # elif direction == 'r':
+        #     robot.stepRight()
+        # elif direction == 'e':
+        #     robot.extendArm()
+        # elif direction == 'c':
+        #     robot.contractArm()
+
+        base.pointCapture()
