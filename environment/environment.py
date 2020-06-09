@@ -130,6 +130,12 @@ class section:
             self.curve.up()
 
 
+def distance(a, b):
+    x = a[0] - b[0]
+    y = a[1] - b[1]
+    return math.sqrt(x ** 2 + y ** 2)
+
+
 class Environment:
     def __init__(self, robot: section):
 
@@ -141,10 +147,18 @@ class Environment:
         self.robot = robot
         self.capPoints = 0
         self.points = []
+        self.makePoint()
 
         self.rewardTool = turtle.Turtle()
         self.rewardTool.hideturtle()
         self.drawReward()
+
+        self.currentState = [self.robot.currentAngle,
+                             self.robot.sectionLen,
+                             distance(self.robot.getTipPos(), self.points[0].pos())]  # Arc Parameters - Distance to Point
+        self.prevState = self.currentState
+
+        self.actionTaken = ''
 
     def drawTaskSpace(self):
         # global wn
@@ -237,6 +251,14 @@ class Environment:
             self.points.pop(pCap)
             self.drawReward()
 
+    def reward(self):
+        return 'hello'
+
+    # def rewardFunction(self):
+    #     d = distance(self.robot.getTipPos(), self.points[0])
+    #
+    #     return d
+
     def generatePoint(self):
         angle = random.uniform(-2 * math.pi, 2 * math.pi)
         maxArcLen = robot.maxSectionLen
@@ -274,8 +296,6 @@ if __name__ == '__main__':
     base = Environment(robot)
     base.drawGround()
 
-    base.makePoint()
-    print(base.points)
     angles = np.arange(0.1, 2 * math.pi, 0.1).tolist()
 
     commandDict = {'l': robot.stepLeft,
@@ -297,7 +317,6 @@ if __name__ == '__main__':
         wn.tracer(100)
         for i in range(steps):
             commandDict[direction]()
-
 
         # if direction == 'l':
         #     robot.stepLeft()
