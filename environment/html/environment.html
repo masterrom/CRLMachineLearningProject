@@ -1,0 +1,1409 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.8.1" />
+<title>environment API documentation</title>
+<meta name="description" content="" />
+<link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
+<link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
+<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>environment</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">#!/usr/bin/env python
+import time
+import turtle
+import math
+import random
+from typing import Any
+
+from dataclasses import dataclass
+import numpy as np
+import ipdb
+
+
+@dataclass
+class Observation:
+    state: Any
+    reward: float
+    action: str
+
+
+turtle.setup(800, 600)
+wn = turtle.Screen()
+wn.tracer(300)
+
+
+class section:
+
+    def __init__(self, sectionLen, maxSectionLen):
+        &#34;&#34;&#34;
+        Section class represents a single section of a continuum robot
+
+        :param sectionLen: Minimum section length\n
+        :param maxSectionLen: Maximum Section length
+        &#34;&#34;&#34;
+        self.section = turtle.Turtle()
+        self.section.color(&#39;red&#39;)
+
+        self.curve = turtle.Turtle()
+        self.curve.color(&#39;green&#39;)
+
+        self.sectionLen = sectionLen
+        self.minSectionLen = sectionLen
+        self.maxSectionLen = maxSectionLen
+
+        self.zero = 0.00001
+        self.leftLimit = 1.9 * math.pi
+        self.currentAngle = self.zero
+        self.tipPos = (0, 0)
+
+        self.drawSection(self.currentAngle)
+        self.displayCurve()
+
+        self.controls = {
+            &#39;l&#39;: self.stepLeft,
+            &#39;r&#39;: self.stepRight,
+            &#39;e&#39;: self.extendArm,
+            &#39;c&#39;: self.contractArm
+        }
+
+    def stepLeft(self):
+        &#34;&#34;&#34;
+        stepLeft function will increase the curvature angle towards 2π
+        while the section Length will remain the same. Each step will
+        increase the angle by 0.01
+        :return: None
+        &#34;&#34;&#34;
+        # increase by angle by .5 degree
+        if self.currentAngle == self.zero:
+            self.currentAngle = 0
+
+        self.currentAngle += 0.01
+        if self.currentAngle == self.leftLimit:
+            self.currentAngle -= 0.01
+            print(&#34;Left angle limit reached&#34;, self.currentAngle)
+            return
+
+        self.drawSection(self.currentAngle)
+
+    def stepRight(self):
+        &#34;&#34;&#34;
+        stepRight function will decrease the curvature angle towards -2π
+        while the section Length will remain the same. Each step will
+        decrease the angle by 0.01
+        :return: None
+        &#34;&#34;&#34;
+        # decrease by angle by .5 degree
+        if self.currentAngle == self.zero:
+            self.currentAngle = 0
+
+        self.currentAngle -= 0.01
+        if self.currentAngle == -self.leftLimit:
+            self.currentAngle += 0.01
+            print(&#34;Right angle limit reached&#34;, self.currentAngle)
+            return
+
+        self.drawSection(self.currentAngle)
+
+    def extendArm(self):
+        &#34;&#34;&#34;
+        extendArm will increase the length of section by a single unit
+        if the length is below the maximum increase. Curvature will remain
+        constant
+        :return: None
+        &#34;&#34;&#34;
+        if self.sectionLen == self.maxSectionLen:
+            assert &#34;Section max length has reached&#34;
+            return
+        else:
+            self.sectionLen += 1
+        self.drawSection(self.currentAngle)
+        self.displayCurve()
+        return
+
+    def contractArm(self):
+        &#34;&#34;&#34;
+        contractArm will decrease the length of section by a single unit
+        if the length is above the minimum length. Curvature will remain
+        constant
+        :return: None
+        &#34;&#34;&#34;
+        if self.sectionLen == self.minSectionLen:
+            assert &#34;Section min length has reached&#34;
+            return
+        else:
+            self.sectionLen -= 1
+        self.drawSection(self.currentAngle)
+        self.displayCurve()
+        return
+
+    def drawSection(self, angle):
+        &#34;&#34;&#34;
+        drawSection will draw the current representation of the section
+        based on the given angle and current section length
+        :param angle: Angle of the curvature. Should not be used
+        :return: None
+        &#34;&#34;&#34;
+        self.section.clear()
+        self.section.hideturtle()
+        wn.tracer(self.sectionLen)
+        if angle == 0:
+            angle = self.zero
+
+        radius = self.sectionLen / angle
+
+        t = np.linspace(0, angle, self.sectionLen)
+        x = radius * np.cos(t)
+        y = radius * np.sin(t)
+
+        for n in range(self.sectionLen):
+            self.section.down()
+            self.section.setpos(x[n] - radius, y[n])
+            self.section.up()
+
+        self.tipPos = (x[len(x) - 1] - radius, y[len(y) - 1])
+        self.section.home()
+
+    def getTipPos(self):
+        &#34;&#34;&#34;
+        getTipPos return a (x,y) coordinate of where the tip of the section is located
+        :return: float
+        &#34;&#34;&#34;
+        return self.tipPos
+
+    def displayCurve(self):
+        &#34;&#34;&#34;
+        displayCurve is used of visualize all the positions that the
+        section can be configured to based on its current section length
+        :return: None
+        &#34;&#34;&#34;
+        tool = self.curve
+        tool.clear()
+        tool.hideturtle()
+
+        ang = np.linspace(-2 * math.pi, 2 * math.pi, 500)
+
+        for i in range(len(ang)):
+            angle = ang[i]
+            radius = self.sectionLen / angle
+
+            t = np.linspace(0, angle, self.sectionLen)
+            x = radius * np.cos(t)
+            y = radius * np.sin(t)
+            self.curve.goto(x[len(x) - 1] - radius, y[len(x) - 1])
+            self.curve.dot(2, &#39;green&#39;)
+            self.curve.up()
+
+
+def distance(a, b):
+    x = a[0] - b[0]
+    y = a[1] - b[1]
+    return math.sqrt(x ** 2 + y ** 2)
+
+
+class Environment:
+    def __init__(self, robot: section):
+        &#34;&#34;&#34;
+        Environment class holds the entire game. Where the
+        robot(made out of several sections) is the player. And the
+        purpose of the game is to capture as many points as possible
+        without hitting any obstacles in between
+        :param robot: Section
+        &#34;&#34;&#34;
+        self.ground = turtle.Turtle()
+        self.ground.hideturtle()
+        self.taskSpace = {&#39;dim&#39;: (100, 100),
+                          &#39;tool&#39;: turtle.Turtle()}
+        self.taskSpace[&#39;tool&#39;].hideturtle()
+        self.robot = robot
+        self.capPoints = 0
+        self.points = []
+        self.makePoint()
+
+        self.rewardTool = turtle.Turtle()
+        self.rewardTool.hideturtle()
+        self.drawReward()
+
+        self.prevState = [self.robot.currentAngle,
+                          self.robot.sectionLen,
+                          distance(self.robot.getTipPos(),
+                                   self.points[0].pos())]  # Arc Parameters - Distance to Point
+
+        self.observation = Observation(self.prevState, &#39;&#39;, )
+
+    def drawTaskSpace(self):
+        &#34;&#34;&#34;
+        drawTaskSpace is not in use yet
+        :return:
+        &#34;&#34;&#34;
+
+        tool = self.taskSpace[&#39;tool&#39;]
+
+        def makeLine(length):
+            for i in range(length):
+                tool.forward(1)
+
+        tool.up()
+        tool.color(&#34;green&#34;)
+        tool.home()
+        tool.width(7)
+
+        tool.down()
+        makeLine(100)
+
+        tool.up()
+        tool.home()
+        tool.right(180)
+        tool.down()
+        makeLine(100)
+
+        tool.up()
+        tool.right(90)
+        tool.down()
+        makeLine(130)
+
+        tool.up()
+        tool.right(90)
+        tool.down()
+        makeLine(200)
+
+    def drawGround(self):
+        &#34;&#34;&#34;
+        drawGround will draw the initial base line of the game
+        currently holds no physics
+        :return: None
+        &#34;&#34;&#34;
+        global wn
+
+        wn.tracer(600)
+
+        self.ground.color(&#34;black&#34;)
+        self.ground.down()
+
+        for i in range(300):
+            self.ground.dot()
+            self.ground.forward(1)
+
+        self.ground.home()
+        self.ground.right(-180)
+
+        self.ground.down()
+        for i in range(300):
+            self.ground.dot()
+            self.ground.forward(1)
+
+        self.ground.up()
+        self.ground.home()
+
+    def drawReward(self):
+        &#34;&#34;&#34;
+        drawReward will draws out the current reward counter
+        (ie: how many points the robot has been able to capture)
+        :return:
+        &#34;&#34;&#34;
+        self.rewardTool.clear()
+        self.rewardTool.color(&#39;black&#39;)
+        self.rewardTool.up()
+        self.rewardTool.setpos(0, -50)
+        self.rewardTool.down()
+        self.rewardTool.write(&#34;Points: &#34; + str(self.capPoints), align=&#39;center&#39;)
+
+    def pointCapture(self):
+        &#34;&#34;&#34;
+        pointCapture checks if robot tipPosition is within a
+        0.5 radius of the un-captured Point. if so, accumulate
+        the points and generate a new random points
+        :return: None
+        &#34;&#34;&#34;
+        tipPos = self.robot.getTipPos()
+        print(&#34;in here&#34;)
+        pCap = None
+        for i in range(len(self.points)):
+            # Get Distance
+
+            pos = self.points[i].pos()
+
+            a = pos[0] - tipPos[0]
+            b = pos[1] - tipPos[1]
+
+            c = math.sqrt(a ** 2 + b ** 2)
+            print(&#39;C val&#39;, c)
+            if c &lt;= 0.5:
+                self.capPoints += 1
+                pCap = i
+                print(&#34;Captured Point: Points &#34;, self.capPoints)
+                break
+        if pCap is not None:
+            self.points[pCap].clear()
+            self.points.pop(pCap)
+            self.drawReward()
+            self.makePoint()
+
+    def reward(self):
+        return &#39;hello&#39;
+
+    def getObservation(self):
+        # Current State, reward
+        return
+
+    def generatePoint(self):
+        &#34;&#34;&#34;
+        generatePoint generates a random point based on the
+        robot maxSection - minSection and maxCurvature - minCurvature
+        :return: (x, y)
+        &#34;&#34;&#34;
+        angle = random.uniform(-2 * math.pi, 2 * math.pi)
+        maxArcLen = robot.maxSectionLen
+        minArcLen = robot.minSectionLen
+
+        arcLen = random.randint(minArcLen, maxArcLen)
+
+        radius = arcLen / angle
+
+        t = np.linspace(0, angle, arcLen)
+        x = radius * np.cos(t)
+        y = radius * np.sin(t)
+
+        return [x[arcLen - 1] - radius, y[arcLen - 1]]
+
+    def makePoint(self):
+        &#34;&#34;&#34;
+        makePoint generates a random point, draws a point on board
+        :return: None
+        &#34;&#34;&#34;
+        p = self.generatePoint()
+        point = turtle.Turtle()
+        point.hideturtle()
+        point.up()
+
+        point.setpos(p[0], p[1])
+        point.color(&#39;blue&#39;)
+        point.down()
+        point.dot(4)
+        self.points.append(point)
+        point.up()
+
+    def robotStep(self, direction):
+        robot = self.robot
+        # Save state
+        self.prevState = [robot.currentAngle,
+                          robot.sectionLen,
+                          distance(robot.getTipPos(), self.points[0].pos()),
+                          direction]
+        # Step
+        robot.controls[direction]()
+
+
+if __name__ == &#39;__main__&#39;:
+
+    arcLength = 100
+    robot = section(arcLength, 120)
+
+    base = Environment(robot)
+    base.drawGround()
+
+    angles = np.arange(0.1, 2 * math.pi, 0.1).tolist()
+
+    commandDict = {&#39;l&#39;: robot.stepLeft,
+                   &#39;r&#39;: robot.stepRight,
+                   &#39;e&#39;: robot.extendArm,
+                   &#39;c&#39;: robot.contractArm}
+
+    while True:
+        print(&#34;l - move left | r - move right | e - extend | c - contract&#34;)
+        print(&#34;Input Format: (l/r/e/c) &lt;number of Steps in this direction&gt;&#34;)
+        try:
+            direction = str(input(&#34;Enter Direction (l/r/e/c) #steps: &#34;))
+        except KeyboardInterrupt:
+            exit()
+
+        command = direction.split(&#39; &#39;)
+        direction = command[0]
+        steps = int(command[1])
+        wn.tracer(100)
+        for i in range(steps):
+            base.robotStep(direction)
+
+        base.pointCapture()</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="environment.distance"><code class="name flex">
+<span>def <span class="ident">distance</span></span>(<span>a, b)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def distance(a, b):
+    x = a[0] - b[0]
+    y = a[1] - b[1]
+    return math.sqrt(x ** 2 + y ** 2)</code></pre>
+</details>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="environment.Environment"><code class="flex name class">
+<span>class <span class="ident">Environment</span></span>
+<span>(</span><span>robot: <a title="environment.section" href="#environment.section">section</a>)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Environment class holds the entire game. Where the
+robot(made out of several sections) is the player. And the
+purpose of the game is to capture as many points as possible
+without hitting any obstacles in between
+:param robot: Section</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Environment:
+    def __init__(self, robot: section):
+        &#34;&#34;&#34;
+        Environment class holds the entire game. Where the
+        robot(made out of several sections) is the player. And the
+        purpose of the game is to capture as many points as possible
+        without hitting any obstacles in between
+        :param robot: Section
+        &#34;&#34;&#34;
+        self.ground = turtle.Turtle()
+        self.ground.hideturtle()
+        self.taskSpace = {&#39;dim&#39;: (100, 100),
+                          &#39;tool&#39;: turtle.Turtle()}
+        self.taskSpace[&#39;tool&#39;].hideturtle()
+        self.robot = robot
+        self.capPoints = 0
+        self.points = []
+        self.makePoint()
+
+        self.rewardTool = turtle.Turtle()
+        self.rewardTool.hideturtle()
+        self.drawReward()
+
+        self.prevState = [self.robot.currentAngle,
+                          self.robot.sectionLen,
+                          distance(self.robot.getTipPos(),
+                                   self.points[0].pos())]  # Arc Parameters - Distance to Point
+
+        self.observation = Observation(self.prevState, &#39;&#39;, )
+
+    def drawTaskSpace(self):
+        &#34;&#34;&#34;
+        drawTaskSpace is not in use yet
+        :return:
+        &#34;&#34;&#34;
+
+        tool = self.taskSpace[&#39;tool&#39;]
+
+        def makeLine(length):
+            for i in range(length):
+                tool.forward(1)
+
+        tool.up()
+        tool.color(&#34;green&#34;)
+        tool.home()
+        tool.width(7)
+
+        tool.down()
+        makeLine(100)
+
+        tool.up()
+        tool.home()
+        tool.right(180)
+        tool.down()
+        makeLine(100)
+
+        tool.up()
+        tool.right(90)
+        tool.down()
+        makeLine(130)
+
+        tool.up()
+        tool.right(90)
+        tool.down()
+        makeLine(200)
+
+    def drawGround(self):
+        &#34;&#34;&#34;
+        drawGround will draw the initial base line of the game
+        currently holds no physics
+        :return: None
+        &#34;&#34;&#34;
+        global wn
+
+        wn.tracer(600)
+
+        self.ground.color(&#34;black&#34;)
+        self.ground.down()
+
+        for i in range(300):
+            self.ground.dot()
+            self.ground.forward(1)
+
+        self.ground.home()
+        self.ground.right(-180)
+
+        self.ground.down()
+        for i in range(300):
+            self.ground.dot()
+            self.ground.forward(1)
+
+        self.ground.up()
+        self.ground.home()
+
+    def drawReward(self):
+        &#34;&#34;&#34;
+        drawReward will draws out the current reward counter
+        (ie: how many points the robot has been able to capture)
+        :return:
+        &#34;&#34;&#34;
+        self.rewardTool.clear()
+        self.rewardTool.color(&#39;black&#39;)
+        self.rewardTool.up()
+        self.rewardTool.setpos(0, -50)
+        self.rewardTool.down()
+        self.rewardTool.write(&#34;Points: &#34; + str(self.capPoints), align=&#39;center&#39;)
+
+    def pointCapture(self):
+        &#34;&#34;&#34;
+        pointCapture checks if robot tipPosition is within a
+        0.5 radius of the un-captured Point. if so, accumulate
+        the points and generate a new random points
+        :return: None
+        &#34;&#34;&#34;
+        tipPos = self.robot.getTipPos()
+        print(&#34;in here&#34;)
+        pCap = None
+        for i in range(len(self.points)):
+            # Get Distance
+
+            pos = self.points[i].pos()
+
+            a = pos[0] - tipPos[0]
+            b = pos[1] - tipPos[1]
+
+            c = math.sqrt(a ** 2 + b ** 2)
+            print(&#39;C val&#39;, c)
+            if c &lt;= 0.5:
+                self.capPoints += 1
+                pCap = i
+                print(&#34;Captured Point: Points &#34;, self.capPoints)
+                break
+        if pCap is not None:
+            self.points[pCap].clear()
+            self.points.pop(pCap)
+            self.drawReward()
+            self.makePoint()
+
+    def reward(self):
+        return &#39;hello&#39;
+
+    def getObservation(self):
+        # Current State, reward
+        return
+
+    def generatePoint(self):
+        &#34;&#34;&#34;
+        generatePoint generates a random point based on the
+        robot maxSection - minSection and maxCurvature - minCurvature
+        :return: (x, y)
+        &#34;&#34;&#34;
+        angle = random.uniform(-2 * math.pi, 2 * math.pi)
+        maxArcLen = robot.maxSectionLen
+        minArcLen = robot.minSectionLen
+
+        arcLen = random.randint(minArcLen, maxArcLen)
+
+        radius = arcLen / angle
+
+        t = np.linspace(0, angle, arcLen)
+        x = radius * np.cos(t)
+        y = radius * np.sin(t)
+
+        return [x[arcLen - 1] - radius, y[arcLen - 1]]
+
+    def makePoint(self):
+        &#34;&#34;&#34;
+        makePoint generates a random point, draws a point on board
+        :return: None
+        &#34;&#34;&#34;
+        p = self.generatePoint()
+        point = turtle.Turtle()
+        point.hideturtle()
+        point.up()
+
+        point.setpos(p[0], p[1])
+        point.color(&#39;blue&#39;)
+        point.down()
+        point.dot(4)
+        self.points.append(point)
+        point.up()
+
+    def robotStep(self, direction):
+        robot = self.robot
+        # Save state
+        self.prevState = [robot.currentAngle,
+                          robot.sectionLen,
+                          distance(robot.getTipPos(), self.points[0].pos()),
+                          direction]
+        # Step
+        robot.controls[direction]()</code></pre>
+</details>
+<h3>Methods</h3>
+<dl>
+<dt id="environment.Environment.drawGround"><code class="name flex">
+<span>def <span class="ident">drawGround</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>drawGround will draw the initial base line of the game
+currently holds no physics
+:return: None</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def drawGround(self):
+    &#34;&#34;&#34;
+    drawGround will draw the initial base line of the game
+    currently holds no physics
+    :return: None
+    &#34;&#34;&#34;
+    global wn
+
+    wn.tracer(600)
+
+    self.ground.color(&#34;black&#34;)
+    self.ground.down()
+
+    for i in range(300):
+        self.ground.dot()
+        self.ground.forward(1)
+
+    self.ground.home()
+    self.ground.right(-180)
+
+    self.ground.down()
+    for i in range(300):
+        self.ground.dot()
+        self.ground.forward(1)
+
+    self.ground.up()
+    self.ground.home()</code></pre>
+</details>
+</dd>
+<dt id="environment.Environment.drawReward"><code class="name flex">
+<span>def <span class="ident">drawReward</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>drawReward will draws out the current reward counter
+(ie: how many points the robot has been able to capture)
+:return:</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def drawReward(self):
+    &#34;&#34;&#34;
+    drawReward will draws out the current reward counter
+    (ie: how many points the robot has been able to capture)
+    :return:
+    &#34;&#34;&#34;
+    self.rewardTool.clear()
+    self.rewardTool.color(&#39;black&#39;)
+    self.rewardTool.up()
+    self.rewardTool.setpos(0, -50)
+    self.rewardTool.down()
+    self.rewardTool.write(&#34;Points: &#34; + str(self.capPoints), align=&#39;center&#39;)</code></pre>
+</details>
+</dd>
+<dt id="environment.Environment.drawTaskSpace"><code class="name flex">
+<span>def <span class="ident">drawTaskSpace</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>drawTaskSpace is not in use yet
+:return:</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def drawTaskSpace(self):
+    &#34;&#34;&#34;
+    drawTaskSpace is not in use yet
+    :return:
+    &#34;&#34;&#34;
+
+    tool = self.taskSpace[&#39;tool&#39;]
+
+    def makeLine(length):
+        for i in range(length):
+            tool.forward(1)
+
+    tool.up()
+    tool.color(&#34;green&#34;)
+    tool.home()
+    tool.width(7)
+
+    tool.down()
+    makeLine(100)
+
+    tool.up()
+    tool.home()
+    tool.right(180)
+    tool.down()
+    makeLine(100)
+
+    tool.up()
+    tool.right(90)
+    tool.down()
+    makeLine(130)
+
+    tool.up()
+    tool.right(90)
+    tool.down()
+    makeLine(200)</code></pre>
+</details>
+</dd>
+<dt id="environment.Environment.generatePoint"><code class="name flex">
+<span>def <span class="ident">generatePoint</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>generatePoint generates a random point based on the
+robot maxSection - minSection and maxCurvature - minCurvature
+:return: (x, y)</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def generatePoint(self):
+    &#34;&#34;&#34;
+    generatePoint generates a random point based on the
+    robot maxSection - minSection and maxCurvature - minCurvature
+    :return: (x, y)
+    &#34;&#34;&#34;
+    angle = random.uniform(-2 * math.pi, 2 * math.pi)
+    maxArcLen = robot.maxSectionLen
+    minArcLen = robot.minSectionLen
+
+    arcLen = random.randint(minArcLen, maxArcLen)
+
+    radius = arcLen / angle
+
+    t = np.linspace(0, angle, arcLen)
+    x = radius * np.cos(t)
+    y = radius * np.sin(t)
+
+    return [x[arcLen - 1] - radius, y[arcLen - 1]]</code></pre>
+</details>
+</dd>
+<dt id="environment.Environment.getObservation"><code class="name flex">
+<span>def <span class="ident">getObservation</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def getObservation(self):
+    # Current State, reward
+    return</code></pre>
+</details>
+</dd>
+<dt id="environment.Environment.makePoint"><code class="name flex">
+<span>def <span class="ident">makePoint</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>makePoint generates a random point, draws a point on board
+:return: None</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def makePoint(self):
+    &#34;&#34;&#34;
+    makePoint generates a random point, draws a point on board
+    :return: None
+    &#34;&#34;&#34;
+    p = self.generatePoint()
+    point = turtle.Turtle()
+    point.hideturtle()
+    point.up()
+
+    point.setpos(p[0], p[1])
+    point.color(&#39;blue&#39;)
+    point.down()
+    point.dot(4)
+    self.points.append(point)
+    point.up()</code></pre>
+</details>
+</dd>
+<dt id="environment.Environment.pointCapture"><code class="name flex">
+<span>def <span class="ident">pointCapture</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>pointCapture checks if robot tipPosition is within a
+0.5 radius of the un-captured Point. if so, accumulate
+the points and generate a new random points
+:return: None</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def pointCapture(self):
+    &#34;&#34;&#34;
+    pointCapture checks if robot tipPosition is within a
+    0.5 radius of the un-captured Point. if so, accumulate
+    the points and generate a new random points
+    :return: None
+    &#34;&#34;&#34;
+    tipPos = self.robot.getTipPos()
+    print(&#34;in here&#34;)
+    pCap = None
+    for i in range(len(self.points)):
+        # Get Distance
+
+        pos = self.points[i].pos()
+
+        a = pos[0] - tipPos[0]
+        b = pos[1] - tipPos[1]
+
+        c = math.sqrt(a ** 2 + b ** 2)
+        print(&#39;C val&#39;, c)
+        if c &lt;= 0.5:
+            self.capPoints += 1
+            pCap = i
+            print(&#34;Captured Point: Points &#34;, self.capPoints)
+            break
+    if pCap is not None:
+        self.points[pCap].clear()
+        self.points.pop(pCap)
+        self.drawReward()
+        self.makePoint()</code></pre>
+</details>
+</dd>
+<dt id="environment.Environment.reward"><code class="name flex">
+<span>def <span class="ident">reward</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def reward(self):
+    return &#39;hello&#39;</code></pre>
+</details>
+</dd>
+<dt id="environment.Environment.robotStep"><code class="name flex">
+<span>def <span class="ident">robotStep</span></span>(<span>self, direction)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def robotStep(self, direction):
+    robot = self.robot
+    # Save state
+    self.prevState = [robot.currentAngle,
+                      robot.sectionLen,
+                      distance(robot.getTipPos(), self.points[0].pos()),
+                      direction]
+    # Step
+    robot.controls[direction]()</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="environment.Observation"><code class="flex name class">
+<span>class <span class="ident">Observation</span></span>
+<span>(</span><span>state: Any, reward: float, action: str)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Observation(state: Any, reward: float, action: str)</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Observation:
+    state: Any
+    reward: float
+    action: str</code></pre>
+</details>
+</dd>
+<dt id="environment.section"><code class="flex name class">
+<span>class <span class="ident">section</span></span>
+<span>(</span><span>sectionLen, maxSectionLen)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Section class represents a single section of a continuum robot</p>
+<p>:param sectionLen: Minimum section length</p>
+<p>:param maxSectionLen: Maximum Section length</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class section:
+
+    def __init__(self, sectionLen, maxSectionLen):
+        &#34;&#34;&#34;
+        Section class represents a single section of a continuum robot
+
+        :param sectionLen: Minimum section length\n
+        :param maxSectionLen: Maximum Section length
+        &#34;&#34;&#34;
+        self.section = turtle.Turtle()
+        self.section.color(&#39;red&#39;)
+
+        self.curve = turtle.Turtle()
+        self.curve.color(&#39;green&#39;)
+
+        self.sectionLen = sectionLen
+        self.minSectionLen = sectionLen
+        self.maxSectionLen = maxSectionLen
+
+        self.zero = 0.00001
+        self.leftLimit = 1.9 * math.pi
+        self.currentAngle = self.zero
+        self.tipPos = (0, 0)
+
+        self.drawSection(self.currentAngle)
+        self.displayCurve()
+
+        self.controls = {
+            &#39;l&#39;: self.stepLeft,
+            &#39;r&#39;: self.stepRight,
+            &#39;e&#39;: self.extendArm,
+            &#39;c&#39;: self.contractArm
+        }
+
+    def stepLeft(self):
+        &#34;&#34;&#34;
+        stepLeft function will increase the curvature angle towards 2π
+        while the section Length will remain the same. Each step will
+        increase the angle by 0.01
+        :return: None
+        &#34;&#34;&#34;
+        # increase by angle by .5 degree
+        if self.currentAngle == self.zero:
+            self.currentAngle = 0
+
+        self.currentAngle += 0.01
+        if self.currentAngle == self.leftLimit:
+            self.currentAngle -= 0.01
+            print(&#34;Left angle limit reached&#34;, self.currentAngle)
+            return
+
+        self.drawSection(self.currentAngle)
+
+    def stepRight(self):
+        &#34;&#34;&#34;
+        stepRight function will decrease the curvature angle towards -2π
+        while the section Length will remain the same. Each step will
+        decrease the angle by 0.01
+        :return: None
+        &#34;&#34;&#34;
+        # decrease by angle by .5 degree
+        if self.currentAngle == self.zero:
+            self.currentAngle = 0
+
+        self.currentAngle -= 0.01
+        if self.currentAngle == -self.leftLimit:
+            self.currentAngle += 0.01
+            print(&#34;Right angle limit reached&#34;, self.currentAngle)
+            return
+
+        self.drawSection(self.currentAngle)
+
+    def extendArm(self):
+        &#34;&#34;&#34;
+        extendArm will increase the length of section by a single unit
+        if the length is below the maximum increase. Curvature will remain
+        constant
+        :return: None
+        &#34;&#34;&#34;
+        if self.sectionLen == self.maxSectionLen:
+            assert &#34;Section max length has reached&#34;
+            return
+        else:
+            self.sectionLen += 1
+        self.drawSection(self.currentAngle)
+        self.displayCurve()
+        return
+
+    def contractArm(self):
+        &#34;&#34;&#34;
+        contractArm will decrease the length of section by a single unit
+        if the length is above the minimum length. Curvature will remain
+        constant
+        :return: None
+        &#34;&#34;&#34;
+        if self.sectionLen == self.minSectionLen:
+            assert &#34;Section min length has reached&#34;
+            return
+        else:
+            self.sectionLen -= 1
+        self.drawSection(self.currentAngle)
+        self.displayCurve()
+        return
+
+    def drawSection(self, angle):
+        &#34;&#34;&#34;
+        drawSection will draw the current representation of the section
+        based on the given angle and current section length
+        :param angle: Angle of the curvature. Should not be used
+        :return: None
+        &#34;&#34;&#34;
+        self.section.clear()
+        self.section.hideturtle()
+        wn.tracer(self.sectionLen)
+        if angle == 0:
+            angle = self.zero
+
+        radius = self.sectionLen / angle
+
+        t = np.linspace(0, angle, self.sectionLen)
+        x = radius * np.cos(t)
+        y = radius * np.sin(t)
+
+        for n in range(self.sectionLen):
+            self.section.down()
+            self.section.setpos(x[n] - radius, y[n])
+            self.section.up()
+
+        self.tipPos = (x[len(x) - 1] - radius, y[len(y) - 1])
+        self.section.home()
+
+    def getTipPos(self):
+        &#34;&#34;&#34;
+        getTipPos return a (x,y) coordinate of where the tip of the section is located
+        :return: float
+        &#34;&#34;&#34;
+        return self.tipPos
+
+    def displayCurve(self):
+        &#34;&#34;&#34;
+        displayCurve is used of visualize all the positions that the
+        section can be configured to based on its current section length
+        :return: None
+        &#34;&#34;&#34;
+        tool = self.curve
+        tool.clear()
+        tool.hideturtle()
+
+        ang = np.linspace(-2 * math.pi, 2 * math.pi, 500)
+
+        for i in range(len(ang)):
+            angle = ang[i]
+            radius = self.sectionLen / angle
+
+            t = np.linspace(0, angle, self.sectionLen)
+            x = radius * np.cos(t)
+            y = radius * np.sin(t)
+            self.curve.goto(x[len(x) - 1] - radius, y[len(x) - 1])
+            self.curve.dot(2, &#39;green&#39;)
+            self.curve.up()</code></pre>
+</details>
+<h3>Methods</h3>
+<dl>
+<dt id="environment.section.contractArm"><code class="name flex">
+<span>def <span class="ident">contractArm</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>contractArm will decrease the length of section by a single unit
+if the length is above the minimum length. Curvature will remain
+constant
+:return: None</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def contractArm(self):
+    &#34;&#34;&#34;
+    contractArm will decrease the length of section by a single unit
+    if the length is above the minimum length. Curvature will remain
+    constant
+    :return: None
+    &#34;&#34;&#34;
+    if self.sectionLen == self.minSectionLen:
+        assert &#34;Section min length has reached&#34;
+        return
+    else:
+        self.sectionLen -= 1
+    self.drawSection(self.currentAngle)
+    self.displayCurve()
+    return</code></pre>
+</details>
+</dd>
+<dt id="environment.section.displayCurve"><code class="name flex">
+<span>def <span class="ident">displayCurve</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>displayCurve is used of visualize all the positions that the
+section can be configured to based on its current section length
+:return: None</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def displayCurve(self):
+    &#34;&#34;&#34;
+    displayCurve is used of visualize all the positions that the
+    section can be configured to based on its current section length
+    :return: None
+    &#34;&#34;&#34;
+    tool = self.curve
+    tool.clear()
+    tool.hideturtle()
+
+    ang = np.linspace(-2 * math.pi, 2 * math.pi, 500)
+
+    for i in range(len(ang)):
+        angle = ang[i]
+        radius = self.sectionLen / angle
+
+        t = np.linspace(0, angle, self.sectionLen)
+        x = radius * np.cos(t)
+        y = radius * np.sin(t)
+        self.curve.goto(x[len(x) - 1] - radius, y[len(x) - 1])
+        self.curve.dot(2, &#39;green&#39;)
+        self.curve.up()</code></pre>
+</details>
+</dd>
+<dt id="environment.section.drawSection"><code class="name flex">
+<span>def <span class="ident">drawSection</span></span>(<span>self, angle)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>drawSection will draw the current representation of the section
+based on the given angle and current section length
+:param angle: Angle of the curvature. Should not be used
+:return: None</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def drawSection(self, angle):
+    &#34;&#34;&#34;
+    drawSection will draw the current representation of the section
+    based on the given angle and current section length
+    :param angle: Angle of the curvature. Should not be used
+    :return: None
+    &#34;&#34;&#34;
+    self.section.clear()
+    self.section.hideturtle()
+    wn.tracer(self.sectionLen)
+    if angle == 0:
+        angle = self.zero
+
+    radius = self.sectionLen / angle
+
+    t = np.linspace(0, angle, self.sectionLen)
+    x = radius * np.cos(t)
+    y = radius * np.sin(t)
+
+    for n in range(self.sectionLen):
+        self.section.down()
+        self.section.setpos(x[n] - radius, y[n])
+        self.section.up()
+
+    self.tipPos = (x[len(x) - 1] - radius, y[len(y) - 1])
+    self.section.home()</code></pre>
+</details>
+</dd>
+<dt id="environment.section.extendArm"><code class="name flex">
+<span>def <span class="ident">extendArm</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>extendArm will increase the length of section by a single unit
+if the length is below the maximum increase. Curvature will remain
+constant
+:return: None</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def extendArm(self):
+    &#34;&#34;&#34;
+    extendArm will increase the length of section by a single unit
+    if the length is below the maximum increase. Curvature will remain
+    constant
+    :return: None
+    &#34;&#34;&#34;
+    if self.sectionLen == self.maxSectionLen:
+        assert &#34;Section max length has reached&#34;
+        return
+    else:
+        self.sectionLen += 1
+    self.drawSection(self.currentAngle)
+    self.displayCurve()
+    return</code></pre>
+</details>
+</dd>
+<dt id="environment.section.getTipPos"><code class="name flex">
+<span>def <span class="ident">getTipPos</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>getTipPos return a (x,y) coordinate of where the tip of the section is located
+:return: float</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def getTipPos(self):
+    &#34;&#34;&#34;
+    getTipPos return a (x,y) coordinate of where the tip of the section is located
+    :return: float
+    &#34;&#34;&#34;
+    return self.tipPos</code></pre>
+</details>
+</dd>
+<dt id="environment.section.stepLeft"><code class="name flex">
+<span>def <span class="ident">stepLeft</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>stepLeft function will increase the curvature angle towards 2π
+while the section Length will remain the same. Each step will
+increase the angle by 0.01
+:return: None</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def stepLeft(self):
+    &#34;&#34;&#34;
+    stepLeft function will increase the curvature angle towards 2π
+    while the section Length will remain the same. Each step will
+    increase the angle by 0.01
+    :return: None
+    &#34;&#34;&#34;
+    # increase by angle by .5 degree
+    if self.currentAngle == self.zero:
+        self.currentAngle = 0
+
+    self.currentAngle += 0.01
+    if self.currentAngle == self.leftLimit:
+        self.currentAngle -= 0.01
+        print(&#34;Left angle limit reached&#34;, self.currentAngle)
+        return
+
+    self.drawSection(self.currentAngle)</code></pre>
+</details>
+</dd>
+<dt id="environment.section.stepRight"><code class="name flex">
+<span>def <span class="ident">stepRight</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>stepRight function will decrease the curvature angle towards -2π
+while the section Length will remain the same. Each step will
+decrease the angle by 0.01
+:return: None</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def stepRight(self):
+    &#34;&#34;&#34;
+    stepRight function will decrease the curvature angle towards -2π
+    while the section Length will remain the same. Each step will
+    decrease the angle by 0.01
+    :return: None
+    &#34;&#34;&#34;
+    # decrease by angle by .5 degree
+    if self.currentAngle == self.zero:
+        self.currentAngle = 0
+
+    self.currentAngle -= 0.01
+    if self.currentAngle == -self.leftLimit:
+        self.currentAngle += 0.01
+        print(&#34;Right angle limit reached&#34;, self.currentAngle)
+        return
+
+    self.drawSection(self.currentAngle)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="environment.distance" href="#environment.distance">distance</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="environment.Environment" href="#environment.Environment">Environment</a></code></h4>
+<ul class="two-column">
+<li><code><a title="environment.Environment.drawGround" href="#environment.Environment.drawGround">drawGround</a></code></li>
+<li><code><a title="environment.Environment.drawReward" href="#environment.Environment.drawReward">drawReward</a></code></li>
+<li><code><a title="environment.Environment.drawTaskSpace" href="#environment.Environment.drawTaskSpace">drawTaskSpace</a></code></li>
+<li><code><a title="environment.Environment.generatePoint" href="#environment.Environment.generatePoint">generatePoint</a></code></li>
+<li><code><a title="environment.Environment.getObservation" href="#environment.Environment.getObservation">getObservation</a></code></li>
+<li><code><a title="environment.Environment.makePoint" href="#environment.Environment.makePoint">makePoint</a></code></li>
+<li><code><a title="environment.Environment.pointCapture" href="#environment.Environment.pointCapture">pointCapture</a></code></li>
+<li><code><a title="environment.Environment.reward" href="#environment.Environment.reward">reward</a></code></li>
+<li><code><a title="environment.Environment.robotStep" href="#environment.Environment.robotStep">robotStep</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="environment.Observation" href="#environment.Observation">Observation</a></code></h4>
+</li>
+<li>
+<h4><code><a title="environment.section" href="#environment.section">section</a></code></h4>
+<ul class="two-column">
+<li><code><a title="environment.section.contractArm" href="#environment.section.contractArm">contractArm</a></code></li>
+<li><code><a title="environment.section.displayCurve" href="#environment.section.displayCurve">displayCurve</a></code></li>
+<li><code><a title="environment.section.drawSection" href="#environment.section.drawSection">drawSection</a></code></li>
+<li><code><a title="environment.section.extendArm" href="#environment.section.extendArm">extendArm</a></code></li>
+<li><code><a title="environment.section.getTipPos" href="#environment.section.getTipPos">getTipPos</a></code></li>
+<li><code><a title="environment.section.stepLeft" href="#environment.section.stepLeft">stepLeft</a></code></li>
+<li><code><a title="environment.section.stepRight" href="#environment.section.stepRight">stepRight</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.8.1</a>.</p>
+</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+</body>
+</html>

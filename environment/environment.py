@@ -3,9 +3,19 @@ import time
 import turtle
 import math
 import random
+from typing import Any
 
+from dataclasses import dataclass
 import numpy as np
 import ipdb
+
+
+@dataclass
+class Observation:
+    state: Any
+    reward: float
+    action: str
+
 
 turtle.setup(800, 600)
 wn = turtle.Screen()
@@ -13,7 +23,14 @@ wn.tracer(300)
 
 
 class section:
+
     def __init__(self, sectionLen, maxSectionLen):
+        """
+        Section class represents a single section of a continuum robot
+
+        :param sectionLen: Minimum section length\n
+        :param maxSectionLen: Maximum Section length
+        """
         self.section = turtle.Turtle()
         self.section.color('red')
 
@@ -32,7 +49,20 @@ class section:
         self.drawSection(self.currentAngle)
         self.displayCurve()
 
+        self.controls = {
+            'l': self.stepLeft,
+            'r': self.stepRight,
+            'e': self.extendArm,
+            'c': self.contractArm
+        }
+
     def stepLeft(self):
+        """
+        stepLeft function will increase the curvature angle towards 2π
+        while the section Length will remain the same. Each step will
+        increase the angle by 0.01
+        :return: None
+        """
         # increase by angle by .5 degree
         if self.currentAngle == self.zero:
             self.currentAngle = 0
@@ -46,6 +76,12 @@ class section:
         self.drawSection(self.currentAngle)
 
     def stepRight(self):
+        """
+        stepRight function will decrease the curvature angle towards -2π
+        while the section Length will remain the same. Each step will
+        decrease the angle by 0.01
+        :return: None
+        """
         # decrease by angle by .5 degree
         if self.currentAngle == self.zero:
             self.currentAngle = 0
@@ -59,6 +95,12 @@ class section:
         self.drawSection(self.currentAngle)
 
     def extendArm(self):
+        """
+        extendArm will increase the length of section by a single unit
+        if the length is below the maximum increase. Curvature will remain
+        constant
+        :return: None
+        """
         if self.sectionLen == self.maxSectionLen:
             assert "Section max length has reached"
             return
@@ -69,6 +111,12 @@ class section:
         return
 
     def contractArm(self):
+        """
+        contractArm will decrease the length of section by a single unit
+        if the length is above the minimum length. Curvature will remain
+        constant
+        :return: None
+        """
         if self.sectionLen == self.minSectionLen:
             assert "Section min length has reached"
             return
@@ -79,7 +127,12 @@ class section:
         return
 
     def drawSection(self, angle):
-
+        """
+        drawSection will draw the current representation of the section
+        based on the given angle and current section length
+        :param angle: Angle of the curvature. Should not be used
+        :return: None
+        """
         self.section.clear()
         self.section.hideturtle()
         wn.tracer(self.sectionLen)
@@ -101,17 +154,18 @@ class section:
         self.section.home()
 
     def getTipPos(self):
+        """
+        getTipPos return a (x,y) coordinate of where the tip of the section is located
+        :return: float
+        """
         return self.tipPos
 
-    def getReachRange(self):
-        # At max Section Len
-
-        # At min Section Len
-
-        return
-
     def displayCurve(self):
-
+        """
+        displayCurve is used of visualize all the positions that the
+        section can be configured to based on its current section length
+        :return: None
+        """
         tool = self.curve
         tool.clear()
         tool.hideturtle()
@@ -138,7 +192,13 @@ def distance(a, b):
 
 class Environment:
     def __init__(self, robot: section):
-
+        """
+        Environment class holds the entire game. Where the
+        robot(made out of several sections) is the player. And the
+        purpose of the game is to capture as many points as possible
+        without hitting any obstacles in between
+        :param robot: Section
+        """
         self.ground = turtle.Turtle()
         self.ground.hideturtle()
         self.taskSpace = {'dim': (100, 100),
@@ -153,17 +213,18 @@ class Environment:
         self.rewardTool.hideturtle()
         self.drawReward()
 
-        self.currentState = [self.robot.currentAngle,
-                             self.robot.sectionLen,
-                             distance(self.robot.getTipPos(), self.points[0].pos())]  # Arc Parameters - Distance to Point
-        self.prevState = self.currentState
+        self.prevState = [self.robot.currentAngle,
+                          self.robot.sectionLen,
+                          distance(self.robot.getTipPos(),
+                                   self.points[0].pos())]  # Arc Parameters - Distance to Point
 
-        self.actionTaken = ''
+        self.observation = Observation(self.prevState, '', )
 
     def drawTaskSpace(self):
-        # global wn
-        #
-        # wn.tracer(100)
+        """
+        drawTaskSpace is not in use yet
+        :return:
+        """
 
         tool = self.taskSpace['tool']
 
@@ -196,7 +257,11 @@ class Environment:
         makeLine(200)
 
     def drawGround(self):
-
+        """
+        drawGround will draw the initial base line of the game
+        currently holds no physics
+        :return: None
+        """
         global wn
 
         wn.tracer(600)
@@ -220,6 +285,11 @@ class Environment:
         self.ground.home()
 
     def drawReward(self):
+        """
+        drawReward will draws out the current reward counter
+        (ie: how many points the robot has been able to capture)
+        :return:
+        """
         self.rewardTool.clear()
         self.rewardTool.color('black')
         self.rewardTool.up()
@@ -228,6 +298,12 @@ class Environment:
         self.rewardTool.write("Points: " + str(self.capPoints), align='center')
 
     def pointCapture(self):
+        """
+        pointCapture checks if robot tipPosition is within a
+        0.5 radius of the un-captured Point. if so, accumulate
+        the points and generate a new random points
+        :return: None
+        """
         tipPos = self.robot.getTipPos()
         print("in here")
         pCap = None
@@ -250,16 +326,21 @@ class Environment:
             self.points[pCap].clear()
             self.points.pop(pCap)
             self.drawReward()
+            self.makePoint()
 
     def reward(self):
         return 'hello'
 
-    # def rewardFunction(self):
-    #     d = distance(self.robot.getTipPos(), self.points[0])
-    #
-    #     return d
+    def getObservation(self):
+        # Current State, reward
+        return
 
     def generatePoint(self):
+        """
+        generatePoint generates a random point based on the
+        robot maxSection - minSection and maxCurvature - minCurvature
+        :return: (x, y)
+        """
         angle = random.uniform(-2 * math.pi, 2 * math.pi)
         maxArcLen = robot.maxSectionLen
         minArcLen = robot.minSectionLen
@@ -275,6 +356,10 @@ class Environment:
         return [x[arcLen - 1] - radius, y[arcLen - 1]]
 
     def makePoint(self):
+        """
+        makePoint generates a random point, draws a point on board
+        :return: None
+        """
         p = self.generatePoint()
         point = turtle.Turtle()
         point.hideturtle()
@@ -286,6 +371,16 @@ class Environment:
         point.dot(4)
         self.points.append(point)
         point.up()
+
+    def robotStep(self, direction):
+        robot = self.robot
+        # Save state
+        self.prevState = [robot.currentAngle,
+                          robot.sectionLen,
+                          distance(robot.getTipPos(), self.points[0].pos()),
+                          direction]
+        # Step
+        robot.controls[direction]()
 
 
 if __name__ == '__main__':
@@ -316,15 +411,6 @@ if __name__ == '__main__':
         steps = int(command[1])
         wn.tracer(100)
         for i in range(steps):
-            commandDict[direction]()
-
-        # if direction == 'l':
-        #     robot.stepLeft()
-        # elif direction == 'r':
-        #     robot.stepRight()
-        # elif direction == 'e':
-        #     robot.extendArm()
-        # elif direction == 'c':
-        #     robot.contractArm()
+            base.robotStep(direction)
 
         base.pointCapture()
