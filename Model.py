@@ -42,21 +42,21 @@ class Model(nn.Module):
 
 if __name__ == '__main__':
 
-    turtle.setup(800, 600)
-    wn = turtle.Screen()
-    wn.tracer(300)
+    # turtle.setup(800, 600)
+    # wn = turtle.Screen()
+    # wn.tracer(300)
 
     arcLength = 100
     robot = section(arcLength, 120)
     base = Environment(robot)
-    model = Model(3, 4)
-    qVal = model(torch.Tensor(base.observation.nextState))
-    import ipdb; ipdb.set_trace()
+    base.render()
+    # model = Model(3, 4)
+    # qVal = model(torch.Tensor(base.observation.nextState))
+    # import ipdb; ipdb.set_trace()
     # base.drawGround()
-    # commands = ['l', 'r', 'e', 'c']
+    commands = ['l', 'r', 'e', 'c']
 
-    # for i in range(100):
-    #     wn.tracer(100)
-    #     direction = base.randomAction()
-    #     base.robotStep(commands[direction])
-    #
+    for i in range(100):
+        direction = base.randomAction()
+        base.robotStep(commands[direction])
+        base.render()

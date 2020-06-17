@@ -31,6 +31,8 @@ class section:
         self.section = turtle.Turtle()
         self.section.color('red')
 
+        self.render = False
+
         self.curve = turtle.Turtle()
         self.curve.color('green')
 
@@ -43,8 +45,8 @@ class section:
         self.currentAngle = self.zero
         self.tipPos = (0, 0)
 
-        self.drawSection(self.currentAngle)
-        self.displayCurve()
+        # self.drawSection(self.currentAngle)
+        # self.displayCurve()
 
         self.controls = {
             'l': self.stepLeft,
@@ -55,6 +57,9 @@ class section:
         self.controlNum = {
             'l': 0, 'r': 1, 'e': 2, 'c': 3
         }
+
+    def setRender(self, state):
+        self.render = state
 
     def stepLeft(self):
         """
@@ -73,7 +78,8 @@ class section:
             print("Left angle limit reached", self.currentAngle)
             return
 
-        self.drawSection(self.currentAngle)
+        if self.render:
+            self.drawSection(self.currentAngle)
 
     def stepRight(self):
         """
@@ -91,8 +97,8 @@ class section:
             self.currentAngle += 0.01
             print("Right angle limit reached", self.currentAngle)
             return
-
-        self.drawSection(self.currentAngle)
+        if self.render:
+            self.drawSection(self.currentAngle)
 
     def extendArm(self):
         """
@@ -106,8 +112,10 @@ class section:
             return
         else:
             self.sectionLen += 1
-        self.drawSection(self.currentAngle)
-        self.displayCurve()
+
+        if self.render:
+            self.drawSection(self.currentAngle)
+            self.displayCurve()
         return
 
     def contractArm(self):
@@ -122,8 +130,11 @@ class section:
             return
         else:
             self.sectionLen -= 1
-        self.drawSection(self.currentAngle)
-        self.displayCurve()
+
+        if self.render:
+            self.drawSection(self.currentAngle)
+            self.displayCurve()
+
         return
 
     def drawSection(self, angle):
@@ -135,7 +146,7 @@ class section:
         """
         self.section.clear()
         self.section.hideturtle()
-        wn.tracer(self.sectionLen)
+        # wn.tracer(self.sectionLen)
         if angle == 0:
             angle = self.zero
 
@@ -184,6 +195,7 @@ class section:
             self.curve.up()
 
 
+
 def distance(a, b):
     x = a[0] - b[0]
     y = a[1] - b[1]
@@ -199,6 +211,8 @@ class Environment:
         without hitting any obstacles in between
         :param robot: Section
         """
+        turtle.setup(800, 600)
+        self.wn = None
         self.ground = turtle.Turtle()
         self.ground.hideturtle()
         self.taskSpace = {'dim': (100, 100),
@@ -207,18 +221,18 @@ class Environment:
         self.robot = robot
         self.capPoints = 0
         self.points = []
-        self.makePoint()
+        self.generatePoint()
 
         self.rewardTool = turtle.Turtle()
         self.rewardTool.hideturtle()
-        self.drawReward()
+        # self.drawReward()
 
         self.prevState = [self.robot.currentAngle,
                           self.robot.sectionLen,
-                          distance(self.robot.getTipPos(),self.points[0].pos())]  # Arc Parameters - Distance to Point
+                          distance(self.robot.getTipPos(), (self.points[0][0],self.points[0][1]))]  # Arc Parameters - Distance to Point
         self.currentState = self.prevState
 
-        self.observation = Observation(self.prevState, self.prevState,-self.prevState[2], 0 )
+        self.observation = Observation(self.prevState, self.prevState, -self.prevState[2], 0)
 
     def drawTaskSpace(self):
         """
@@ -262,9 +276,7 @@ class Environment:
         currently holds no physics
         :return: None
         """
-        global wn
-
-        wn.tracer(600)
+        self.wn.tracer(600)
 
         self.ground.color("black")
         self.ground.down()
@@ -297,6 +309,22 @@ class Environment:
         self.rewardTool.down()
         self.rewardTool.write("Points: " + str(self.capPoints), align='center')
 
+    def render(self):
+        if self.wn is None:
+            self.wn = turtle.Screen()
+            self.wn.delay(0)
+            # self.wn.tracer(600)
+            self.drawGround()
+            self.robot.setRender(True)
+
+            self.robot.drawSection(self.robot.currentAngle)
+            self.robot.displayCurve()
+
+        self.drawReward()
+        self.drawPoint()
+        # turtle.Screen().getcanvas()
+        # self.wn.mainloop()
+
     def pointCapture(self):
         """
         pointCapture checks if robot tipPosition is within a
@@ -310,7 +338,7 @@ class Environment:
         for i in range(len(self.points)):
             # Get Distance
 
-            pos = self.points[i].pos()
+            pos = self.points[i]
 
             a = pos[0] - tipPos[0]
             b = pos[1] - tipPos[1]
@@ -325,13 +353,9 @@ class Environment:
         if pCap is not None:
             self.points[pCap].clear()
             self.points.pop(pCap)
-            self.drawReward()
-            self.makePoint()
+            self.generatePoint()
             return True
         return False
-
-    def reward(self):
-        return 'hello'
 
     def getObservation(self):
         # Current State, reward
@@ -355,14 +379,15 @@ class Environment:
         x = radius * np.cos(t)
         y = radius * np.sin(t)
 
-        return [x[arcLen - 1] - radius, y[arcLen - 1]]
+        point = [x[arcLen - 1] - radius, y[arcLen - 1]]
+        self.points.append(point)
 
-    def makePoint(self):
+    def drawPoint(self):
         """
-        makePoint generates a random point, draws a point on board
+        drawPoint generates a random point, draws a point on board
         :return: None
         """
-        p = self.generatePoint()
+        p = self.points[0]
         point = turtle.Turtle()
         point.hideturtle()
         point.up()
@@ -371,7 +396,6 @@ class Environment:
         point.color('blue')
         point.down()
         point.dot(4)
-        self.points.append(point)
         point.up()
 
     def robotStep(self, direction):
@@ -388,8 +412,8 @@ class Environment:
         # Step
         robot.controls[direction]()
         self.currentState = [robot.currentAngle,
-                          robot.sectionLen,
-                          distance(robot.getTipPos(), self.points[0].pos()),]
+                             robot.sectionLen,
+                             distance(robot.getTipPos(), (self.points[0][0],self.points[0][1])), ]
         reward = -self.currentState[2]
 
         # Determine if a point was captured
@@ -407,8 +431,5 @@ class Environment:
         :return: int
         """
         # TODO add in random seed
-        action = randint(0,3)
+        action = randint(0, 3)
         return action
-
-
-
