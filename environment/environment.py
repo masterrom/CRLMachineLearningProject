@@ -7,14 +7,16 @@ from typing import Any
 
 from dataclasses import dataclass
 import numpy as np
+from numpy.random import randint, seed
 import ipdb
 
 
 @dataclass
 class Observation:
     state: Any
+    nextState: Any
     reward: float
-    action: str
+    action: float
 
 
 turtle.setup(800, 600)
@@ -54,6 +56,9 @@ class section:
             'r': self.stepRight,
             'e': self.extendArm,
             'c': self.contractArm
+        }
+        self.controlNum = {
+            'l': 0, 'r': 1, 'e': 2, 'c': 3
         }
 
     def stepLeft(self):
@@ -215,10 +220,10 @@ class Environment:
 
         self.prevState = [self.robot.currentAngle,
                           self.robot.sectionLen,
-                          distance(self.robot.getTipPos(),
-                                   self.points[0].pos())]  # Arc Parameters - Distance to Point
+                          distance(self.robot.getTipPos(),self.points[0].pos())]  # Arc Parameters - Distance to Point
+        self.currentState = self.prevState
 
-        self.observation = Observation(self.prevState, '', )
+        self.observation = Observation(self.prevState, self.prevState,-self.prevState[2], 0 )
 
     def drawTaskSpace(self):
         """
@@ -316,7 +321,7 @@ class Environment:
             b = pos[1] - tipPos[1]
 
             c = math.sqrt(a ** 2 + b ** 2)
-            print('C val', c)
+
             if c <= 0.5:
                 self.capPoints += 1
                 pCap = i
@@ -327,6 +332,8 @@ class Environment:
             self.points.pop(pCap)
             self.drawReward()
             self.makePoint()
+            return True
+        return False
 
     def reward(self):
         return 'hello'
@@ -373,14 +380,34 @@ class Environment:
         point.up()
 
     def robotStep(self, direction):
+
         robot = self.robot
-        # Save state
-        self.prevState = [robot.currentAngle,
-                          robot.sectionLen,
-                          distance(robot.getTipPos(), self.points[0].pos()),
-                          direction]
+        # Save previous state
+        self.prevState = self.currentState
+
         # Step
         robot.controls[direction]()
+        self.currentState = [robot.currentAngle,
+                          robot.sectionLen,
+                          distance(robot.getTipPos(), self.points[0].pos()),]
+        reward = -self.currentState[2]
+
+        # Determine if a point was captured
+        capPoint = self.pointCapture()
+        if capPoint:
+            reward += 100
+
+        self.observation = Observation(self.prevState, self.currentState, reward, self.robot.controlNum[direction])
+        print(self.observation)
+        return self.observation
+
+    def randomAction(self):
+
+        action = randint(0,3)
+        return action
+
+
+
 
 
 if __name__ == '__main__':
@@ -398,19 +425,11 @@ if __name__ == '__main__':
                    'e': robot.extendArm,
                    'c': robot.contractArm}
 
-    while True:
-        print("l - move left | r - move right | e - extend | c - contract")
-        print("Input Format: (l/r/e/c) <number of Steps in this direction>")
-        try:
-            direction = str(input("Enter Direction (l/r/e/c) #steps: "))
-        except KeyboardInterrupt:
-            exit()
+    commands = ['l', 'r', 'e', 'c']
 
-        command = direction.split(' ')
-        direction = command[0]
-        steps = int(command[1])
+    for i in range(100):
         wn.tracer(100)
-        for i in range(steps):
-            base.robotStep(direction)
+        direction = base.randomAction()
+        base.robotStep(commands[direction])
 
-        base.pointCapture()
+
