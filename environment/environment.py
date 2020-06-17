@@ -19,11 +19,6 @@ class Observation:
     action: float
 
 
-turtle.setup(800, 600)
-wn = turtle.Screen()
-wn.tracer(300)
-
-
 class section:
 
     def __init__(self, sectionLen, maxSectionLen):
@@ -349,8 +344,8 @@ class Environment:
         :return: (x, y)
         """
         angle = random.uniform(-2 * math.pi, 2 * math.pi)
-        maxArcLen = robot.maxSectionLen
-        minArcLen = robot.minSectionLen
+        maxArcLen = self.robot.maxSectionLen
+        minArcLen = self.robot.minSectionLen
 
         arcLen = random.randint(minArcLen, maxArcLen)
 
@@ -380,6 +375,11 @@ class Environment:
         point.up()
 
     def robotStep(self, direction):
+        """
+        robotStep will take a step towards the specified direction
+        :param direction: integer (0,1,2,3)
+        :return: Observation
+        """
 
         robot = self.robot
         # Save previous state
@@ -402,34 +402,13 @@ class Environment:
         return self.observation
 
     def randomAction(self):
-
+        """
+        randomAction will generate a random action
+        :return: int
+        """
+        # TODO add in random seed
         action = randint(0,3)
         return action
 
-
-
-
-
-if __name__ == '__main__':
-
-    arcLength = 100
-    robot = section(arcLength, 120)
-
-    base = Environment(robot)
-    base.drawGround()
-
-    angles = np.arange(0.1, 2 * math.pi, 0.1).tolist()
-
-    commandDict = {'l': robot.stepLeft,
-                   'r': robot.stepRight,
-                   'e': robot.extendArm,
-                   'c': robot.contractArm}
-
-    commands = ['l', 'r', 'e', 'c']
-
-    for i in range(100):
-        wn.tracer(100)
-        direction = base.randomAction()
-        base.robotStep(commands[direction])
 
 
