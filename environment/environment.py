@@ -19,6 +19,12 @@ class Observation:
     action: float
 
 
+def distance(a, b):
+    x = a[0] - b[0]
+    y = a[1] - b[1]
+    return math.sqrt(x ** 2 + y ** 2)
+
+
 class section:
 
     def __init__(self, sectionLen, maxSectionLen):
@@ -164,6 +170,42 @@ class section:
         self.tipPos = (x[len(x) - 1] - radius, y[len(y) - 1])
         self.section.home()
 
+    def drawSectioPosition(self, angle, initX, initY):
+        """
+        drawSection will draw the current representation of the section
+        based on the given angle and current section length
+        :param angle: Angle of the curvature. Should not be used
+        :return: None
+        """
+        self.section.clear()
+        self.section.hideturtle()
+        # wn.tracer(self.sectionLen)
+        if angle == 0:
+            angle = self.zero
+
+        radius = self.sectionLen / angle
+
+        t = np.linspace(0, angle, self.sectionLen)
+        x = (radius * np.cos(t)) + initX
+        y = radius * np.sin(t) + initY
+
+        self.section.up()
+        self.section.setpos(x[0] - radius, y[0])
+
+        for n in range(self.sectionLen):
+            self.section.down()
+            xp = x[n] - radius
+            yp = y[n]
+            self.section.setpos(xp, yp)
+            self.section.up()
+
+        xp = x[len(x) - 1] - radius
+        yp = y[len(y) - 1]
+        self.tipPos = (xp, yp)
+        self.section.home()
+
+
+
     def getTipPos(self):
         """
         getTipPos return a (x,y) coordinate of where the tip of the section is located
@@ -195,11 +237,15 @@ class section:
             self.curve.up()
 
 
+class Robot:
+    def __init__(self):
+        self.sections = []
 
-def distance(a, b):
-    x = a[0] - b[0]
-    y = a[1] - b[1]
-    return math.sqrt(x ** 2 + y ** 2)
+    def addSection(self, sec):
+        self.sections.append(sec)
+
+    # def render(self):
+# Each sections tip position will be the starting point of the robot
 
 
 class Environment:
@@ -229,7 +275,8 @@ class Environment:
 
         self.prevState = [self.robot.currentAngle,
                           self.robot.sectionLen,
-                          distance(self.robot.getTipPos(), (self.points[0][0],self.points[0][1]))]  # Arc Parameters - Distance to Point
+                          distance(self.robot.getTipPos(),
+                                   (self.points[0][0], self.points[0][1]))]  # Arc Parameters - Distance to Point
         self.currentState = self.prevState
 
         self.observation = Observation(self.prevState, self.prevState, -self.prevState[2], 0)
@@ -317,8 +364,9 @@ class Environment:
             self.drawGround()
             self.robot.setRender(True)
 
-            self.robot.drawSection(self.robot.currentAngle)
-            self.robot.displayCurve()
+            # self.robot.drawSection(self.robot.currentAngle)
+            self.robot.drawSectioPosition(self.robot.currentAngle, 10, 10)
+            # self.robot.displayCurve()
 
         self.drawReward()
         self.drawPoint()
@@ -413,7 +461,7 @@ class Environment:
         robot.controls[direction]()
         self.currentState = [robot.currentAngle,
                              robot.sectionLen,
-                             distance(robot.getTipPos(), (self.points[0][0],self.points[0][1])), ]
+                             distance(robot.getTipPos(), (self.points[0][0], self.points[0][1])), ]
         reward = -self.currentState[2]
 
         # Determine if a point was captured

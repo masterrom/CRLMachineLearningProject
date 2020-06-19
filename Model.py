@@ -10,6 +10,7 @@ from random import random, sample
 from environment.environment import section, Environment, Observation
 import turtle
 
+
 class ReplayBuffer:
 
     def __init__(self, bufferSize=100000):
@@ -24,6 +25,12 @@ class ReplayBuffer:
         assert numSample <= len(self.buffer)
         return sample(self.buffer, numSample)
 
+
+# Copying over the weights from m to tgt
+def updateTGTModel(m, tgt):
+    tgt.load_state_dict(m.state_dict())
+
+
 class Model(nn.Module):
     def __init__(self, observationShape, numActions):
         super(Model, self).__init__()
@@ -31,7 +38,7 @@ class Model(nn.Module):
         self.numActions = numActions
 
         self.net = nn.Sequential(
-            nn.Linear(observationShape[0], 256),
+            nn.Linear(observationShape, 256),
             nn.ReLU(),
             nn.Linear(256, numActions)
         )
@@ -40,23 +47,25 @@ class Model(nn.Module):
         return self.net(x)
 
 
-if __name__ == '__main__':
+# def trainStep(stateTransitions, model, targetModel)
 
-    # turtle.setup(800, 600)
-    # wn = turtle.Screen()
-    # wn.tracer(300)
+
+if __name__ == '__main__':
 
     arcLength = 100
     robot = section(arcLength, 120)
     base = Environment(robot)
     base.render()
-    # model = Model(3, 4)
-    # qVal = model(torch.Tensor(base.observation.nextState))
-    # import ipdb; ipdb.set_trace()
-    # base.drawGround()
-    commands = ['l', 'r', 'e', 'c']
 
-    for i in range(100):
-        direction = base.randomAction()
-        base.robotStep(commands[direction])
-        base.render()
+    # model = Model(3, 4)
+    # targetModel = Model(3, 4)
+    # updateTGTModel(model, targetModel)
+
+    commands = ['l','r','e','c']
+    while True:
+        direction = int(input("Enter direction: "))
+        numSteps = int(input("Enter steps in direction " + commands[direction]))
+        for j in range(numSteps):
+            base.robotStep(commands[direction])
+            base.render()
+
