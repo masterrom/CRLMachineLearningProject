@@ -24,6 +24,20 @@ def distance(a, b):
     y = a[1] - b[1]
     return math.sqrt(x ** 2 + y ** 2)
 
+def rotation_matrix(axis, theta):
+    """
+    Return the rotation matrix associated with counterclockwise rotation about
+    the given axis by theta radians.
+    """
+    axis = np.asarray(axis)
+    axis = axis / math.sqrt(np.dot(axis, axis))
+    a = math.cos(theta / 2.0)
+    b, c, d = -axis * math.sin(theta / 2.0)
+    aa, bb, cc, dd = a * a, b * b, c * c, d * d
+    bc, ad, ac, ab, bd, cd = b * c, a * d, a * c, a * b, b * d, c * d
+    return np.array([[aa + bb - cc - dd, 2 * (bc + ad), 2 * (bd - ac)],
+                     [2 * (bc - ad), aa + cc - bb - dd, 2 * (cd + ab)],
+                     [2 * (bd + ac), 2 * (cd - ab), aa + dd - bb - cc]])
 
 class section:
 
@@ -34,13 +48,23 @@ class section:
         :param sectionLen: Minimum section length\n
         :param maxSectionLen: Maximum Section length
         """
+
+        self.baseLocation = [0, 0]
+        self.baseAngle = 0
+
         self.section = turtle.Turtle()
         self.section.color('red')
 
         self.render = False
 
+        self.baseFrame = turtle.Turtle()
+        self.endFrame = turtle.Turtle()
+
         self.curve = turtle.Turtle()
         self.curve.color('green')
+
+        self.circle = turtle.Turtle()
+        self.circle.color('pink')
 
         self.sectionLen = sectionLen
         self.minSectionLen = sectionLen
@@ -63,6 +87,12 @@ class section:
         self.controlNum = {
             'l': 0, 'r': 1, 'e': 2, 'c': 3
         }
+
+    def setBaseLocation(self, x, y):
+        self.baseLocation = [x, y]
+
+    def setBaseAngle(self, angle):
+        self.baseAngle = angle
 
     def setRender(self, state):
         self.render = state
@@ -152,6 +182,9 @@ class section:
         """
         self.section.clear()
         self.section.hideturtle()
+        self.section.up()
+        self.section.setpos(self.baseLocation[0], self.baseLocation[1])
+
         # wn.tracer(self.sectionLen)
         if angle == 0:
             angle = self.zero
@@ -161,57 +194,47 @@ class section:
         t = np.linspace(0, angle, self.sectionLen)
         x = radius * np.cos(t)
         y = radius * np.sin(t)
+        z = [0] * self.sectionLen
 
+        allPoints = np.vstack((x,y,z)).T
+        print("\t", allPoints[0])
+        print("\t sectionLen", self.sectionLen)
+        axisOfRotation = [0,0,1]
+        rotationMatrix = rotation_matrix(axisOfRotation, self.baseAngle)
+        print("\t baseAngle:", self.baseAngle)
+
+        import ipdb; ipdb.set_trace()
+        xx = []
+        yy = []
         for n in range(self.sectionLen):
+            point = np.dot(rotationMatrix, allPoints[n])
+            if n == 0 or n == self.sectionLen-1:
+                print('\t', point[0], point[1])
+            px = point[0] - radius + self.baseLocation[0]
+            py = point[1] + self.baseLocation[1]
+            xx.append(px)
+            yy.append(py)
             self.section.down()
-            self.section.setpos(x[n] - radius, y[n])
+            self.section.setpos(px, py)
             self.section.up()
 
-        self.tipPos = (x[len(x) - 1] - radius, y[len(y) - 1])
+        # self.tipPos = (x[len(x) - 1] - radius, y[len(y) - 1])
         self.section.home()
 
-    def drawSectioPosition(self, angle, initX, initY):
-        """
-        drawSection will draw the current representation of the section
-        based on the given angle and current section length
-        :param angle: Angle of the curvature. Should not be used
-        :return: None
-        """
-        self.section.clear()
-        self.section.hideturtle()
-        # wn.tracer(self.sectionLen)
-        if angle == 0:
-            angle = self.zero
-
-        radius = self.sectionLen / angle
-
-        t = np.linspace(0, angle, self.sectionLen)
-        x = (radius * np.cos(t)) + initX
-        y = radius * np.sin(t) + initY
-
-        self.section.up()
-        self.section.setpos(x[0] - radius, y[0])
-
-        for n in range(self.sectionLen):
-            self.section.down()
-            xp = x[n] - radius
-            yp = y[n]
-            self.section.setpos(xp, yp)
-            self.section.up()
-
-        xp = x[len(x) - 1] - radius
-        yp = y[len(y) - 1]
-        self.tipPos = (xp, yp)
-        self.section.home()
-
-
+        return (xx, yy)
 
     def getTipPos(self):
         """
         getTipPos return a (x,y) coordinate of where the tip of the section is located
         :return: float
         """
-        return self.tipPos
+        radius = self.sectionLen / self.currentAngle
+
+        t = np.linspace(0, self.currentAngle, self.sectionLen)
+        x = radius * np.cos(t) + self.baseLocation[0]
+        y = radius * np.sin(t) + self.baseLocation[1]
+
+        return (x[len(x) - 1] - radius, y[len(y) - 1])
 
     def displayCurve(self):
         """
@@ -236,20 +259,110 @@ class section:
             self.curve.dot(2, 'green')
             self.curve.up()
 
+    def drawBaseFrame(self):
+        x = self.baseFrame
+        # x.clear()
+        x.hideturtle()
+
+        x.setpos(0, 0)
+        x.color('red')
+        x.width(3)
+        x.forward(20)
+        x.goto(0, 0)
+
+        x.goto(0, 20)
+
+    def drawEndFrame(self):
+        # Based on the current angle
+        end = self.endFrame
+        end.reset()
+        end.clear()
+        end.hideturtle()
+        tip = self.getTipPos()
+
+        angle = np.rad2deg(self.baseAngle)
+
+        end.up()
+        end.setpos(tip[0], tip[1])
+        end.left(0)
+        end.left(90 + angle)
+        end.down()
+        end.forward(20)
+        # print(self.currentAngle)
+
+    def drawCircle(self):
+        self.circle.up()
+        self.circle.clear()
+        self.circle.hideturtle()
+
+        radius = self.sectionLen / self.currentAngle
+
+        self.circle.setpos(-radius, -radius)
+        self.circle.down()
+        self.circle.circle(radius)
+
 
 class Robot:
     def __init__(self):
         self.sections = []
+        self.checkLine = turtle.Turtle()
+        self.checkLine.hideturtle()
+        self.checkLine.color('black')
+        self.checkLine.width(3)
 
-    def addSection(self, sec):
-        self.sections.append(sec)
+    def addSection(self, minSection=100, maxSectionIncrement=40):
+        newSection = section(minSection, maxSectionIncrement)
+
+        if len(self.sections) >= 1:
+            lastTip = self.sections[-1].getTipPos()
+            newSection.setBaseLocation(lastTip[0], lastTip[1])
+            newSection.setBaseAngle(self.sections[-1].currentAngle)
+            newSection.currentAngle = 0.1
+            # import ipdb; ipdb.set_trace()
+        self.sections.append(newSection)
+
+    # def render(self, sec):
+    def render(self):
+        for i in range(len(self.sections)):
+            angle = self.sections[i].currentAngle
+            print('Section', i, 'angle', angle)
+            x, y = self.sections[i].drawSection(angle)
+            if i == 1:
+                check = self.checkLine
+                check.clear()
+                check.hideturtle()
+                check.color('purple')
+                check.width(3)
+                check.up()
+                for n in range(len(x)):
+                    check.down()
+                    check.setpos(x[n], y[n])
+                    check.up()
+
+            # self.sections[i].displayCurve()
+            # self.sections[i].drawCircle()
+            # self.sections[i].drawBaseFrame()
+            self.sections[i].drawEndFrame()
+        print('\n')
+        turtle.Screen().update()
+        # self.sections[i].render()
+
+    def step(self, sectionNum, direction):
+        # assert sectionNum > len(self.sections), "Section should be within the added sections"
+        self.sections[sectionNum - 1].controls[direction]()
+        newTip = self.sections[sectionNum - 1].getTipPos()
+        self.sections[sectionNum].setBaseLocation(newTip[0], newTip[1])
+        self.sections[sectionNum].setBaseAngle(self.sections[sectionNum-1].currentAngle)
 
     # def render(self):
+
+
 # Each sections tip position will be the starting point of the robot
 
 
 class Environment:
-    def __init__(self, robot: section):
+
+    def __init__(self, robot: Robot):
         """
         Environment class holds the entire game. Where the
         robot(made out of several sections) is the player. And the
@@ -273,10 +386,12 @@ class Environment:
         self.rewardTool.hideturtle()
         # self.drawReward()
 
-        self.prevState = [self.robot.currentAngle,
-                          self.robot.sectionLen,
-                          distance(self.robot.getTipPos(),
-                                   (self.points[0][0], self.points[0][1]))]  # Arc Parameters - Distance to Point
+        self.prevState = [0, 0, 0]
+        # self.prevState = [self.robot.currentAngle,
+        #                   self.robot.sectionLen,
+        #                   distance(self.robot.getTipPos(),
+        #                            (self.points[0][0], self.points[0][1]))]  # Arc Parameters - Distance to Point
+        #
         self.currentState = self.prevState
 
         self.observation = Observation(self.prevState, self.prevState, -self.prevState[2], 0)
@@ -359,17 +474,21 @@ class Environment:
     def render(self):
         if self.wn is None:
             self.wn = turtle.Screen()
-            self.wn.delay(0)
+            # self.wn.delay(0)
             # self.wn.tracer(600)
             self.drawGround()
-            self.robot.setRender(True)
+            # self.robot.setRender(True)
 
             # self.robot.drawSection(self.robot.currentAngle)
-            self.robot.drawSectioPosition(self.robot.currentAngle, 10, 10)
             # self.robot.displayCurve()
+        # self.wn.tracer(1000)
+        self.robot.render()
 
         self.drawReward()
-        self.drawPoint()
+        turtle.Screen().update()
+        # self.drawPoint()
+
+        # print(self.robot.getTipPos())
         # turtle.Screen().getcanvas()
         # self.wn.mainloop()
 
@@ -415,20 +534,21 @@ class Environment:
         robot maxSection - minSection and maxCurvature - minCurvature
         :return: (x, y)
         """
-        angle = random.uniform(-2 * math.pi, 2 * math.pi)
-        maxArcLen = self.robot.maxSectionLen
-        minArcLen = self.robot.minSectionLen
-
-        arcLen = random.randint(minArcLen, maxArcLen)
-
-        radius = arcLen / angle
-
-        t = np.linspace(0, angle, arcLen)
-        x = radius * np.cos(t)
-        y = radius * np.sin(t)
-
-        point = [x[arcLen - 1] - radius, y[arcLen - 1]]
-        self.points.append(point)
+        return [0, 0]
+        # angle = random.uniform(-2 * math.pi, 2 * math.pi)
+        # maxArcLen = self.robot.maxSectionLen
+        # minArcLen = self.robot.minSectionLen
+        #
+        # arcLen = random.randint(minArcLen, maxArcLen)
+        #
+        # radius = arcLen / angle
+        #
+        # t = np.linspace(0, angle, arcLen)
+        # x = radius * np.cos(t)
+        # y = radius * np.sin(t)
+        #
+        # point = [x[arcLen - 1] - radius, y[arcLen - 1]]
+        # self.points.append(point)
 
     def drawPoint(self):
         """
@@ -446,13 +566,16 @@ class Environment:
         point.dot(4)
         point.up()
 
-    def robotStep(self, direction):
+    def robotStep(self, sec, direction):
         """
         robotStep will take a step towards the specified direction
         :param direction: integer (0,1,2,3)
         :return: Observation
         """
 
+        self.robot.step(sec, direction)
+
+        '''
         robot = self.robot
         # Save previous state
         self.prevState = self.currentState
@@ -472,6 +595,7 @@ class Environment:
         self.observation = Observation(self.prevState, self.currentState, reward, self.robot.controlNum[direction])
         print(self.observation)
         return self.observation
+        '''
 
     def randomAction(self):
         """

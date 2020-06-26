@@ -7,7 +7,7 @@ import torch.nn as nn
 import torch.functional as F
 import torch.optim as optim
 from random import random, sample
-from environment.environment import section, Environment, Observation
+from environment.environment import section, Environment, Observation, Robot
 import turtle
 
 
@@ -53,19 +53,38 @@ class Model(nn.Module):
 if __name__ == '__main__':
 
     arcLength = 100
-    robot = section(arcLength, 120)
+
+    robot = Robot()
+    robot.addSection()
+    robot.addSection()
+
     base = Environment(robot)
     base.render()
+
+    turtle.Screen().update()
+
+    robot.sections[-1].section.color('black')
 
     # model = Model(3, 4)
     # targetModel = Model(3, 4)
     # updateTGTModel(model, targetModel)
-
-    commands = ['l','r','e','c']
+    x = turtle.Turtle()
+    x.color('purple')
+    x.width(5)
     while True:
-        direction = int(input("Enter direction: "))
-        numSteps = int(input("Enter steps in direction " + commands[direction]))
-        for j in range(numSteps):
-            base.robotStep(commands[direction])
+        direction = str(input("Enter direction: "))
+
+        for i in range(10):
+            base.robotStep(1, direction)
             base.render()
+
+
+    # commands = ['l','r','e','c']
+    # while True:
+    #     direction = int(input("Enter direction: "))
+    #     numSteps = int(input("Enter steps in direction " + commands[direction]))
+    #     for j in range(numSteps):
+    #         base.robotStep(commands[direction])
+    #         # base.render()
+    #         print(base.robot.getTipPos())
 
