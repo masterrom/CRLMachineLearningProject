@@ -140,65 +140,7 @@ class section:
 
         return
 
-    def drawSection(self, angle):
-        """
-        drawSection will draw the current representation of the section
-        based on the given angle and current section length
-        :param angle: Angle of the curvature. Should not be used
-        :return: None
-        """
-        self.section.clear()
-        self.section.hideturtle()
-        self.section.up()
-        self.section.setpos(self.baseLocation[0], self.baseLocation[1])
-
-        if angle == 0:  # Use epsilon difference
-            angle = self.zero
-
-        radius = self.sectionLen / angle  # curvature is 0 ==> radius is infinite
-
-        t = np.linspace(0, angle, self.sectionLen)
-        x = radius * np.cos(t)
-        y = radius * np.sin(t)
-
-        allPoints = np.vstack((x, y)).T
-        allPoints[:,0] = allPoints[:,0] - radius
-
-
-        print("\t First Point", allPoints[0])
-        print("\t Section Length", len(allPoints))
-        print("\t Base Angle:", self.baseAngle)
-        print("\t Base Location:", self.baseLocation)
-        print("\t allPoints shape:", allPoints.shape)
-
-
-
-        for i in range(len(self.transformations)):
-            baseAngle = self.transformations[i]
-            r = np.array(((np.cos(baseAngle), -np.sin(baseAngle)),
-                          (np.sin(baseAngle), np.cos(baseAngle))))
-            allPoints = np.dot(r, allPoints.T).T
-
-        allPoints[:,0] = allPoints[:,0] + self.baseLocation[0]
-        allPoints[:, 1] = allPoints[:, 1] + self.baseLocation[1]
-
-        print("\t R:",r)
-
-        for n in range(self.sectionLen):
-            px = allPoints[n][0]
-            py = allPoints[n][1]
-
-            if n == 0 or n == self.sectionLen - 1:
-                print('\tPoint=' + str(n) + ' :', px, py)
-
-            self.section.down()
-            self.section.setpos(px, py)
-            self.section.up()
-
-        # self.tipPos = (x[len(x) - 1] - radius, y[len(y) - 1])
-        self.section.home()
-
-    def drawSection2(self, transformations):
+    def drawSection(self, transformations):
         """
         drawSection will draw the current representation of the section
         based on the given angle and current section length
@@ -230,8 +172,6 @@ class section:
         print("\t Base Location:", self.baseLocation)
         print("\t allPoints shape:", allPoints.shape)
 
-
-
         for i in range(len(transformations)):
             baseAngle = transformations[i]
             r = np.array(((np.cos(baseAngle), -np.sin(baseAngle)),
@@ -256,37 +196,7 @@ class section:
         # self.tipPos = (x[len(x) - 1] - radius, y[len(y) - 1])
         self.section.home()
 
-    def getTipPos(self):
-        """
-        getTipPos return a (x,y) coordinate of where the tip of the section is located
-        :return: float
-        """
-        angle = self.currentAngle
-
-        radius = self.sectionLen / self.currentAngle
-
-        t = np.linspace(0, angle, self.sectionLen)
-        x = radius * np.cos(t)
-        y = radius * np.sin(t)
-
-        allPoints = np.vstack((x, y)).T
-        allPoints[:,0] = allPoints[:,0] - radius
-
-        r = np.array(((np.cos(self.baseAngle), -np.sin(self.baseAngle)),
-                      (np.sin(self.baseAngle), np.cos(self.baseAngle))))
-
-        allPoints = np.dot(r, allPoints.T).T
-
-        px = allPoints[-1][0] + self.baseLocation[0]
-        py = allPoints[-1][1] + self.baseLocation[1]
-
-        point = [px, py]
-
-        return point
-
-        # return (x[len(x) - 1] - radius, y[len(y) - 1])
-
-    def getTipPos2(self, transformations):
+    def getTipPos(self, transformations):
         """
         getTipPos return a (x,y) coordinate of where the tip of the section is located
         :return: float
@@ -315,7 +225,6 @@ class section:
         point = [px, py]
 
         return point
-
 
     def displayCurve(self):
         """
@@ -395,7 +304,7 @@ class Robot:
         newSection = section(100, 20)
         angles = self.getAllCurrentAngles()
         if len(self.sections) >= 1:
-            newTip = self.sections[-1].getTipPos2(angles)
+            newTip = self.sections[-1].getTipPos(angles)
             newSection.setBaseLocation(newTip[0], newTip[1])
             newSection.setBaseAngle(self.sections[-1].currentAngle)
 
@@ -433,7 +342,7 @@ class Robot:
             sec = self.sections[i]
             transformations = angles[:i]
             print('\t transformations:', transformations)
-            sec.drawSection2(transformations)
+            sec.drawSection(transformations)
 
         wn.update()
 
