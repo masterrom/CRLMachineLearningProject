@@ -377,6 +377,10 @@ class Robot:
     # def render(self):
 
 
+
+
+
+
 # Each sections tip position will be the starting point of the robot
 
 

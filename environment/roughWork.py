@@ -167,10 +167,7 @@ class section:
 
 
         print("\t First Point", allPoints[0])
-        print("\t Section Length", len(allPoints))
-        print("\t Base Angle:", self.baseAngle)
         print("\t Base Location:", self.baseLocation)
-        print("\t allPoints shape:", allPoints.shape)
 
         for i in range(len(transformations)):
             baseAngle = transformations[i]
@@ -219,8 +216,11 @@ class section:
 
             allPoints = np.dot(r, allPoints.T).T
 
-        px = allPoints[-1][0] + self.baseLocation[0]
-        py = allPoints[-1][1] + self.baseLocation[1]
+        allPoints[:, 0] = allPoints[:, 0] + self.baseLocation[0]
+        allPoints[:, 1] = allPoints[:, 1] + self.baseLocation[1]
+
+        px = allPoints[-1][0]
+        py = allPoints[-1][1]
 
         point = [px, py]
 
@@ -299,7 +299,6 @@ class Robot:
         self.sections = []
         self.zero = 0.00001
 
-
     def newSection(self):
         newSection = section(100, 20)
         angles = self.getAllCurrentAngles()
@@ -322,17 +321,18 @@ class Robot:
     def step(self, secNum, action):
         secNum -= 1
         # # Base Section
+
         self.sections[secNum].controls[action]()
-        angle = self.sections[secNum].currentAngle
-        tipPos = self.sections[secNum].getTipPos()
+
+        angles = self.getAllCurrentAngles()
+
+        tipPos = self.sections[secNum].getTipPos(angles[:secNum])
         i = secNum + 1
         while i < len(self.sections):
 
-            self.sections[i].setBaseAngle(angle)
             self.sections[i].setBaseLocation(tipPos[0], tipPos[1])
 
-            angle = self.sections[i].currentAngle
-            tipPos = self.sections[i].getTipPos()
+            tipPos = self.sections[i].getTipPos(angles[:i])
             i += 1
 
     def render(self):
@@ -383,6 +383,7 @@ if __name__ == '__main__':
     #         t.dot(2, 'blue')
     #         t.up
     robot = Robot()
+    robot.newSection()
     robot.newSection()
     robot.newSection()
     robot.newSection()
