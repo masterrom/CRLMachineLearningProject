@@ -77,12 +77,21 @@ class section:
         }
 
     def setBaseLocation(self, x, y):
+        '''
+        setBaseLocation is used modify the starting position of
+        the section.
+        :param x: x coordinate of the new base position
+        :param y: y coordinate of the new base position
+        :return: None
+        '''
         self.baseLocation = [x, y]
 
-    def setBaseAngle(self, angle):
-        self.baseAngle = angle
-
     def setRender(self, state):
+        '''
+        setRender Method is used enable/disable rendering
+        :param state: bool
+        :return: None
+        '''
         self.render = state
 
     def stepLeft(self):
@@ -287,65 +296,34 @@ class section:
             self.curve.up()
 
 
-    def drawBaseFrame(self):
-        x = self.baseFrame
-        # x.clear()
-        x.hideturtle()
-
-        x.setpos(0, 0)
-        x.color('red')
-        x.width(3)
-        x.forward(20)
-        x.goto(0, 0)
-
-        x.goto(0, 20)
-
-    def drawEndFrame(self):
-        # Based on the current angle
-        end = self.endFrame
-        end.reset()
-        end.clear()
-        end.hideturtle()
-        tip = self.getTipPos()
-
-        angle = np.rad2deg(self.currentAngle)
-
-        end.up()
-        end.setpos(tip[0], tip[1])
-        end.left(0)
-        end.left(90 + angle)
-        end.down()
-        end.forward(20)
-        # print(self.currentAngle)
-
-    def drawCircle(self):
-        self.circle.up()
-        self.circle.clear()
-        self.circle.hideturtle()
-
-        radius = self.sectionLen / self.currentAngle
-
-        self.circle.setpos(-radius, -radius)
-        self.circle.down()
-        self.circle.circle(radius)
-
-
 class Robot:
     def __init__(self):
+        '''
+        Robot class is a super class, which can be used to
+        make a series of sections to work together.
+        '''
         self.sections = []
         self.zero = 0.00001
 
     def newSection(self):
+        '''
+        newSection creates a new section and adds it to the end of
+        the robot. Default section is 100
+        :return: None
+        '''
         newSection = section(100, 20)
         angles = self.getAllCurrentAngles()
         if len(self.sections) >= 1:
             newTip = self.sections[-1].getTipPos(angles)
             newSection.setBaseLocation(newTip[0], newTip[1])
-            newSection.setBaseAngle(self.sections[-1].currentAngle)
 
         self.sections.append(newSection)
 
     def getAllCurrentAngles(self):
+        '''
+        getAllCurrentAngles gets the curvature angle for each section
+        :return: list[float]
+        '''
         angles = []
         for i in range(len(self.sections)):
             angle = self.sections[i].currentAngle
@@ -355,6 +333,12 @@ class Robot:
         return angles
 
     def step(self, secNum, action):
+        '''
+        step methods will conduct the given action for the given section
+        :param secNum: Section number in the robot (index starting at 1)
+        :param action: action (l,r,c,e)
+        :return:  None
+        '''
         secNum -= 1
         # # Base Section
 
@@ -372,6 +356,10 @@ class Robot:
             i += 1
 
     def render(self):
+        '''
+        render will draw out each section
+        :return:
+        '''
         angles = self.getAllCurrentAngles()
         for i in range(len(self.sections)):
             print("--------- Section " + str(i) + '-----------')

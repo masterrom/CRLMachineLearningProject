@@ -33,19 +33,22 @@ from typing import Any
 
 from dataclasses import dataclass
 import numpy as np
+from numpy.random import randint, seed
 import ipdb
 
 
 @dataclass
 class Observation:
     state: Any
+    nextState: Any
     reward: float
-    action: str
+    action: float
 
 
-turtle.setup(800, 600)
-wn = turtle.Screen()
-wn.tracer(300)
+def distance(a, b):
+    x = a[0] - b[0]
+    y = a[1] - b[1]
+    return math.sqrt(x ** 2 + y ** 2)
 
 
 class section:
@@ -57,11 +60,25 @@ class section:
         :param sectionLen: Minimum section length\n
         :param maxSectionLen: Maximum Section length
         &#34;&#34;&#34;
+
+        self.baseLocation = [0, 0]
+        self.baseAngle = 0
+        self.transformations = []
+        # Set of baseLocations and Angles
+
         self.section = turtle.Turtle()
         self.section.color(&#39;red&#39;)
 
+        self.render = False
+
+        self.baseFrame = turtle.Turtle()
+        self.endFrame = turtle.Turtle()
+
         self.curve = turtle.Turtle()
         self.curve.color(&#39;green&#39;)
+
+        self.circle = turtle.Turtle()
+        self.circle.color(&#39;pink&#39;)
 
         self.sectionLen = sectionLen
         self.minSectionLen = sectionLen
@@ -72,8 +89,8 @@ class section:
         self.currentAngle = self.zero
         self.tipPos = (0, 0)
 
-        self.drawSection(self.currentAngle)
-        self.displayCurve()
+        # self.drawSection(self.currentAngle)
+        # self.displayCurve()
 
         self.controls = {
             &#39;l&#39;: self.stepLeft,
@@ -81,6 +98,27 @@ class section:
             &#39;e&#39;: self.extendArm,
             &#39;c&#39;: self.contractArm
         }
+        self.controlNum = {
+            &#39;l&#39;: 0, &#39;r&#39;: 1, &#39;e&#39;: 2, &#39;c&#39;: 3
+        }
+
+    def setBaseLocation(self, x, y):
+        &#39;&#39;&#39;
+        setBaseLocation is used modify the starting position of
+        the section.
+        :param x: x coordinate of the new base position
+        :param y: y coordinate of the new base position
+        :return: None
+        &#39;&#39;&#39;
+        self.baseLocation = [x, y]
+
+    def setRender(self, state):
+        &#39;&#39;&#39;
+        setRender Method is used enable/disable rendering
+        :param state: bool
+        :return: None
+        &#39;&#39;&#39;
+        self.render = state
 
     def stepLeft(self):
         &#34;&#34;&#34;
@@ -99,7 +137,8 @@ class section:
             print(&#34;Left angle limit reached&#34;, self.currentAngle)
             return
 
-        self.drawSection(self.currentAngle)
+        if self.render:
+            self.drawSection(self.currentAngle)
 
     def stepRight(self):
         &#34;&#34;&#34;
@@ -117,8 +156,8 @@ class section:
             self.currentAngle += 0.01
             print(&#34;Right angle limit reached&#34;, self.currentAngle)
             return
-
-        self.drawSection(self.currentAngle)
+        if self.render:
+            self.drawSection(self.currentAngle)
 
     def extendArm(self):
         &#34;&#34;&#34;
@@ -132,8 +171,10 @@ class section:
             return
         else:
             self.sectionLen += 1
-        self.drawSection(self.currentAngle)
-        self.displayCurve()
+
+        if self.render:
+            self.drawSection(self.currentAngle)
+            self.displayCurve()
         return
 
     def contractArm(self):
@@ -148,11 +189,14 @@ class section:
             return
         else:
             self.sectionLen -= 1
-        self.drawSection(self.currentAngle)
-        self.displayCurve()
+
+        if self.render:
+            self.drawSection(self.currentAngle)
+            self.displayCurve()
+
         return
 
-    def drawSection(self, angle):
+    def drawSection(self, transformations):
         &#34;&#34;&#34;
         drawSection will draw the current representation of the section
         based on the given angle and current section length
@@ -161,32 +205,84 @@ class section:
         &#34;&#34;&#34;
         self.section.clear()
         self.section.hideturtle()
-        wn.tracer(self.sectionLen)
-        if angle == 0:
+        self.section.up()
+        self.section.setpos(self.baseLocation[0], self.baseLocation[1])
+
+        angle = self.currentAngle
+        if angle == 0:  # Use epsilon difference
             angle = self.zero
 
-        radius = self.sectionLen / angle
+        radius = self.sectionLen / angle  # curvature is 0 ==&gt; radius is infinite
 
         t = np.linspace(0, angle, self.sectionLen)
         x = radius * np.cos(t)
         y = radius * np.sin(t)
 
+        allPoints = np.vstack((x, y)).T
+        allPoints[:,0] = allPoints[:,0] - radius
+
+
+        print(&#34;\t First Point&#34;, allPoints[0])
+        print(&#34;\t Base Location:&#34;, self.baseLocation)
+
+        for i in range(len(transformations)):
+            baseAngle = transformations[i]
+            r = np.array(((np.cos(baseAngle), -np.sin(baseAngle)),
+                          (np.sin(baseAngle), np.cos(baseAngle))))
+            allPoints = np.dot(r, allPoints.T).T
+
+        allPoints[:,0] = allPoints[:,0] + self.baseLocation[0]
+        allPoints[:, 1] = allPoints[:, 1] + self.baseLocation[1]
+
+
         for n in range(self.sectionLen):
+            px = allPoints[n][0]
+            py = allPoints[n][1]
+
+            if n == 0 or n == self.sectionLen - 1:
+                print(&#39;\tPoint=&#39; + str(n) + &#39; :&#39;, px, py)
+
             self.section.down()
-            self.section.setpos(x[n] - radius, y[n])
+            self.section.setpos(px, py)
             self.section.up()
 
-        self.tipPos = (x[len(x) - 1] - radius, y[len(y) - 1])
+        # self.tipPos = (x[len(x) - 1] - radius, y[len(y) - 1])
         self.section.home()
 
-    def getTipPos(self):
+    def getTipPos(self, transformations):
         &#34;&#34;&#34;
         getTipPos return a (x,y) coordinate of where the tip of the section is located
         :return: float
         &#34;&#34;&#34;
-        return self.tipPos
+        angle = self.currentAngle
 
-    def displayCurve(self):
+        radius = self.sectionLen / self.currentAngle
+
+        t = np.linspace(0, angle, self.sectionLen)
+        x = radius * np.cos(t)
+        y = radius * np.sin(t)
+
+        allPoints = np.vstack((x, y)).T
+        allPoints[:,0] = allPoints[:,0] - radius
+
+        for i in range(len(transformations)):
+            baseAngle = transformations[i]
+            r = np.array(((np.cos(baseAngle), -np.sin(baseAngle)),
+                          (np.sin(baseAngle), np.cos(baseAngle))))
+
+            allPoints = np.dot(r, allPoints.T).T
+
+        allPoints[:, 0] = allPoints[:, 0] + self.baseLocation[0]
+        allPoints[:, 1] = allPoints[:, 1] + self.baseLocation[1]
+
+        px = allPoints[-1][0]
+        py = allPoints[-1][1]
+
+        point = [px, py]
+
+        return point
+
+    def displayCurve(self, transformations):
         &#34;&#34;&#34;
         displayCurve is used of visualize all the positions that the
         section can be configured to based on its current section length
@@ -195,6 +291,7 @@ class section:
         tool = self.curve
         tool.clear()
         tool.hideturtle()
+        tool.up()
 
         ang = np.linspace(-2 * math.pi, 2 * math.pi, 500)
 
@@ -205,19 +302,106 @@ class section:
             t = np.linspace(0, angle, self.sectionLen)
             x = radius * np.cos(t)
             y = radius * np.sin(t)
-            self.curve.goto(x[len(x) - 1] - radius, y[len(x) - 1])
+
+            x = x[-1]
+            y = y[-1]
+
+            x = x - radius
+            points = [x,y]
+            for i in range(len(transformations)):
+                baseAngle = transformations[i]
+                r = np.array(((np.cos(baseAngle), -np.sin(baseAngle)),
+                              (np.sin(baseAngle), np.cos(baseAngle))))
+                points = np.dot(r, points)
+
+            points[0] = points[0] + self.baseLocation[0]
+            points[1] = points[1] + self.baseLocation[1]
+
+            self.curve.goto(points[0], points[1])
             self.curve.dot(2, &#39;green&#39;)
             self.curve.up()
 
 
-def distance(a, b):
-    x = a[0] - b[0]
-    y = a[1] - b[1]
-    return math.sqrt(x ** 2 + y ** 2)
+class Robot:
+    def __init__(self):
+        &#39;&#39;&#39;
+        Robot class is a super class, which can be used to
+        make a series of sections to work together.
+        &#39;&#39;&#39;
+        self.sections = []
+        self.zero = 0.00001
+
+    def newSection(self):
+        &#39;&#39;&#39;
+        newSection creates a new section and adds it to the end of
+        the robot. Default section is 100
+        :return: None
+        &#39;&#39;&#39;
+        newSection = section(100, 20)
+        angles = self.getAllCurrentAngles()
+        if len(self.sections) &gt;= 1:
+            newTip = self.sections[-1].getTipPos(angles)
+            newSection.setBaseLocation(newTip[0], newTip[1])
+
+        self.sections.append(newSection)
+
+    def getAllCurrentAngles(self):
+        &#39;&#39;&#39;
+        getAllCurrentAngles gets the curvature angle for each section
+        :return: list[float]
+        &#39;&#39;&#39;
+        angles = []
+        for i in range(len(self.sections)):
+            angle = self.sections[i].currentAngle
+            if angle != self.zero:
+                angles.append(angle)
+
+        return angles
+
+    def step(self, secNum, action):
+        &#39;&#39;&#39;
+        step methods will conduct the given action for the given section
+        :param secNum: Section number in the robot (index starting at 1)
+        :param action: action (l,r,c,e)
+        :return:  None
+        &#39;&#39;&#39;
+        secNum -= 1
+        # # Base Section
+
+        self.sections[secNum].controls[action]()
+
+        angles = self.getAllCurrentAngles()
+
+        tipPos = self.sections[secNum].getTipPos(angles[:secNum])
+        i = secNum + 1
+        while i &lt; len(self.sections):
+
+            self.sections[i].setBaseLocation(tipPos[0], tipPos[1])
+
+            tipPos = self.sections[i].getTipPos(angles[:i])
+            i += 1
+
+    def render(self):
+        &#39;&#39;&#39;
+        render will draw out each section
+        :return:
+        &#39;&#39;&#39;
+        angles = self.getAllCurrentAngles()
+        for i in range(len(self.sections)):
+            print(&#34;--------- Section &#34; + str(i) + &#39;-----------&#39;)
+            sec = self.sections[i]
+            transformations = angles[:i]
+            print(&#39;\t transformations:&#39;, transformations)
+            sec.drawSection(transformations)
+            # sec.displayCurve(transformations)
+
+
+# Each sections tip position will be the starting point of the robot
 
 
 class Environment:
-    def __init__(self, robot: section):
+
+    def __init__(self, robot: Robot):
         &#34;&#34;&#34;
         Environment class holds the entire game. Where the
         robot(made out of several sections) is the player. And the
@@ -225,6 +409,8 @@ class Environment:
         without hitting any obstacles in between
         :param robot: Section
         &#34;&#34;&#34;
+        turtle.setup(800, 600)
+        self.wn = None
         self.ground = turtle.Turtle()
         self.ground.hideturtle()
         self.taskSpace = {&#39;dim&#39;: (100, 100),
@@ -233,18 +419,21 @@ class Environment:
         self.robot = robot
         self.capPoints = 0
         self.points = []
-        self.makePoint()
+        self.generatePoint()
 
         self.rewardTool = turtle.Turtle()
         self.rewardTool.hideturtle()
-        self.drawReward()
+        # self.drawReward()
 
-        self.prevState = [self.robot.currentAngle,
-                          self.robot.sectionLen,
-                          distance(self.robot.getTipPos(),
-                                   self.points[0].pos())]  # Arc Parameters - Distance to Point
+        self.prevState = [0, 0, 0]
+        # self.prevState = [self.robot.currentAngle,
+        #                   self.robot.sectionLen,
+        #                   distance(self.robot.getTipPos(),
+        #                            (self.points[0][0], self.points[0][1]))]  # Arc Parameters - Distance to Point
+        #
+        self.currentState = self.prevState
 
-        self.observation = Observation(self.prevState, &#39;&#39;, )
+        self.observation = Observation(self.prevState, self.prevState, -self.prevState[2], 0)
 
     def drawTaskSpace(self):
         &#34;&#34;&#34;
@@ -288,9 +477,7 @@ class Environment:
         currently holds no physics
         :return: None
         &#34;&#34;&#34;
-        global wn
-
-        wn.tracer(600)
+        self.wn.tracer(600)
 
         self.ground.color(&#34;black&#34;)
         self.ground.down()
@@ -323,6 +510,27 @@ class Environment:
         self.rewardTool.down()
         self.rewardTool.write(&#34;Points: &#34; + str(self.capPoints), align=&#39;center&#39;)
 
+    def render(self):
+        if self.wn is None:
+            self.wn = turtle.Screen()
+            # self.wn.delay(0)
+            # self.wn.tracer(600)
+            self.drawGround()
+            # self.robot.setRender(True)
+
+            # self.robot.drawSection(self.robot.currentAngle)
+            # self.robot.displayCurve()
+        # self.wn.tracer(1000)
+        self.robot.render()
+
+        self.drawReward()
+        turtle.Screen().update()
+        # self.drawPoint()
+
+        # print(self.robot.getTipPos())
+        # turtle.Screen().getcanvas()
+        # self.wn.mainloop()
+
     def pointCapture(self):
         &#34;&#34;&#34;
         pointCapture checks if robot tipPosition is within a
@@ -336,13 +544,13 @@ class Environment:
         for i in range(len(self.points)):
             # Get Distance
 
-            pos = self.points[i].pos()
+            pos = self.points[i]
 
             a = pos[0] - tipPos[0]
             b = pos[1] - tipPos[1]
 
             c = math.sqrt(a ** 2 + b ** 2)
-            print(&#39;C val&#39;, c)
+
             if c &lt;= 0.5:
                 self.capPoints += 1
                 pCap = i
@@ -351,11 +559,9 @@ class Environment:
         if pCap is not None:
             self.points[pCap].clear()
             self.points.pop(pCap)
-            self.drawReward()
-            self.makePoint()
-
-    def reward(self):
-        return &#39;hello&#39;
+            self.generatePoint()
+            return True
+        return False
 
     def getObservation(self):
         # Current State, reward
@@ -367,26 +573,28 @@ class Environment:
         robot maxSection - minSection and maxCurvature - minCurvature
         :return: (x, y)
         &#34;&#34;&#34;
-        angle = random.uniform(-2 * math.pi, 2 * math.pi)
-        maxArcLen = robot.maxSectionLen
-        minArcLen = robot.minSectionLen
+        return [0, 0]
+        # angle = random.uniform(-2 * math.pi, 2 * math.pi)
+        # maxArcLen = self.robot.maxSectionLen
+        # minArcLen = self.robot.minSectionLen
+        #
+        # arcLen = random.randint(minArcLen, maxArcLen)
+        #
+        # radius = arcLen / angle
+        #
+        # t = np.linspace(0, angle, arcLen)
+        # x = radius * np.cos(t)
+        # y = radius * np.sin(t)
+        #
+        # point = [x[arcLen - 1] - radius, y[arcLen - 1]]
+        # self.points.append(point)
 
-        arcLen = random.randint(minArcLen, maxArcLen)
-
-        radius = arcLen / angle
-
-        t = np.linspace(0, angle, arcLen)
-        x = radius * np.cos(t)
-        y = radius * np.sin(t)
-
-        return [x[arcLen - 1] - radius, y[arcLen - 1]]
-
-    def makePoint(self):
+    def drawPoint(self):
         &#34;&#34;&#34;
-        makePoint generates a random point, draws a point on board
+        drawPoint generates a random point, draws a point on board
         :return: None
         &#34;&#34;&#34;
-        p = self.generatePoint()
+        p = self.points[0]
         point = turtle.Turtle()
         point.hideturtle()
         point.up()
@@ -395,51 +603,47 @@ class Environment:
         point.color(&#39;blue&#39;)
         point.down()
         point.dot(4)
-        self.points.append(point)
         point.up()
 
-    def robotStep(self, direction):
+    def robotStep(self, sec, direction):
+        &#34;&#34;&#34;
+        robotStep will take a step towards the specified direction
+        :param direction: integer (0,1,2,3)
+        :return: Observation
+        &#34;&#34;&#34;
+
+        self.robot.step(sec, direction)
+
+        &#39;&#39;&#39;
         robot = self.robot
-        # Save state
-        self.prevState = [robot.currentAngle,
-                          robot.sectionLen,
-                          distance(robot.getTipPos(), self.points[0].pos()),
-                          direction]
+        # Save previous state
+        self.prevState = self.currentState
+
         # Step
         robot.controls[direction]()
+        self.currentState = [robot.currentAngle,
+                             robot.sectionLen,
+                             distance(robot.getTipPos(), (self.points[0][0], self.points[0][1])), ]
+        reward = -self.currentState[2]
 
+        # Determine if a point was captured
+        capPoint = self.pointCapture()
+        if capPoint:
+            reward += 100
 
-if __name__ == &#39;__main__&#39;:
+        self.observation = Observation(self.prevState, self.currentState, reward, self.robot.controlNum[direction])
+        print(self.observation)
+        return self.observation
+        &#39;&#39;&#39;
 
-    arcLength = 100
-    robot = section(arcLength, 120)
-
-    base = Environment(robot)
-    base.drawGround()
-
-    angles = np.arange(0.1, 2 * math.pi, 0.1).tolist()
-
-    commandDict = {&#39;l&#39;: robot.stepLeft,
-                   &#39;r&#39;: robot.stepRight,
-                   &#39;e&#39;: robot.extendArm,
-                   &#39;c&#39;: robot.contractArm}
-
-    while True:
-        print(&#34;l - move left | r - move right | e - extend | c - contract&#34;)
-        print(&#34;Input Format: (l/r/e/c) &lt;number of Steps in this direction&gt;&#34;)
-        try:
-            direction = str(input(&#34;Enter Direction (l/r/e/c) #steps: &#34;))
-        except KeyboardInterrupt:
-            exit()
-
-        command = direction.split(&#39; &#39;)
-        direction = command[0]
-        steps = int(command[1])
-        wn.tracer(100)
-        for i in range(steps):
-            base.robotStep(direction)
-
-        base.pointCapture()</code></pre>
+    def randomAction(self):
+        &#34;&#34;&#34;
+        randomAction will generate a random action
+        :return: int
+        &#34;&#34;&#34;
+        # TODO add in random seed
+        action = randint(0, 3)
+        return action</code></pre>
 </details>
 </section>
 <section>
@@ -464,6 +668,99 @@ if __name__ == &#39;__main__&#39;:
     return math.sqrt(x ** 2 + y ** 2)</code></pre>
 </details>
 </dd>
+<dt id="environment.randint"><code class="name flex">
+<span>def <span class="ident">randint</span></span>(<span>low, high=None, size=None, dtype=builtins.int)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Return random integers from <code>low</code> (inclusive) to <code>high</code> (exclusive).</p>
+<p>Return random integers from the "discrete uniform" distribution of
+the specified dtype in the "half-open" interval [<code>low</code>, <code>high</code>). If
+<code>high</code> is None (the default), then results are from [0, <code>low</code>).</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>New code should use the <code>integers</code> method of a <code>default_rng()</code>
+instance instead; see <code>random-quick-start</code>.</p>
+</div>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>low</code></strong> :&ensp;<code>int</code> or <code>array-like</code> of <code>ints</code></dt>
+<dd>Lowest (signed) integers to be drawn from the distribution (unless
+<code>high=None</code>, in which case this parameter is one above the
+<em>highest</em> such integer).</dd>
+<dt><strong><code>high</code></strong> :&ensp;<code>int</code> or <code>array-like</code> of <code>ints</code>, optional</dt>
+<dd>If provided, one above the largest (signed) integer to be drawn
+from the distribution (see above for behavior if <code>high=None</code>).
+If array-like, must contain integer values</dd>
+<dt><strong><code>size</code></strong> :&ensp;<code>int</code> or <code>tuple</code> of <code>ints</code>, optional</dt>
+<dd>Output shape.
+If the given shape is, e.g., <code>(m, n, k)</code>, then
+<code>m * n * k</code> samples are drawn.
+Default is None, in which case a
+single value is returned.</dd>
+<dt><strong><code>dtype</code></strong> :&ensp;<code>dtype</code>, optional</dt>
+<dd>
+<p>Desired dtype of the result. Byteorder must be native.
+The default value is int.</p>
+<div class="admonition versionadded">
+<p class="admonition-title">Added in version:&ensp;1.11.0</p>
+</div>
+</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>out</code></strong> :&ensp;<code>int</code> or <code>ndarray</code> of <code>ints</code></dt>
+<dd><code>size</code>-shaped array of random integers from the appropriate
+distribution, or a single such random int if <code>size</code> not provided.</dd>
+</dl>
+<h2 id="see-also">See Also</h2>
+<dl>
+<dt><code>random_integers</code></dt>
+<dd>similar to <code><a title="environment.randint" href="#environment.randint">RandomState.randint()</a></code>, only for the closed interval [<code>low</code>, <code>high</code>], and 1 is the lowest value if <code>high</code> is omitted.</dd>
+<dt><code>Generator.integers</code></dt>
+<dd>which should be used for new code.</dd>
+</dl>
+<h2 id="examples">Examples</h2>
+<pre><code class="python">&gt;&gt;&gt; np.random.randint(2, size=10)
+array([1, 0, 0, 0, 1, 1, 0, 0, 1, 0]) # random
+&gt;&gt;&gt; np.random.randint(1, size=10)
+array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+</code></pre>
+<p>Generate a 2 x 4 array of ints between 0 and 4, inclusive:</p>
+<pre><code class="python">&gt;&gt;&gt; np.random.randint(5, size=(2, 4))
+array([[4, 0, 2, 1], # random
+       [3, 2, 2, 0]])
+</code></pre>
+<p>Generate a 1 x 3 array with 3 different upper bounds</p>
+<pre><code class="python">&gt;&gt;&gt; np.random.randint(1, [3, 5, 10])
+array([2, 2, 9]) # random
+</code></pre>
+<p>Generate a 1 by 3 array with 3 different lower bounds</p>
+<pre><code class="python">&gt;&gt;&gt; np.random.randint([1, 5, 7], 10)
+array([9, 8, 7]) # random
+</code></pre>
+<p>Generate a 2 by 4 array using broadcasting with dtype of uint8</p>
+<pre><code class="python">&gt;&gt;&gt; np.random.randint([1, 3, 5, 7], [[10], [20]], dtype=np.uint8)
+array([[ 8,  6,  9,  7], # random
+       [ 1, 16,  9, 12]], dtype=uint8)
+</code></pre></div>
+</dd>
+<dt id="environment.seed"><code class="name flex">
+<span>def <span class="ident">seed</span></span>(<span>self, seed=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Reseed a legacy MT19937 BitGenerator</p>
+<h2 id="notes">Notes</h2>
+<p>This is a convenience, legacy function.</p>
+<p>The best practice is to <strong>not</strong> reseed a BitGenerator, rather to
+recreate a new one. This method is here for legacy reasons.
+This example demonstrates best practice.</p>
+<pre><code class="python">&gt;&gt;&gt; from numpy.random import MT19937
+&gt;&gt;&gt; from numpy.random import RandomState, SeedSequence
+&gt;&gt;&gt; rs = RandomState(MT19937(SeedSequence(123456789)))
+# Later, you want to restart the stream
+&gt;&gt;&gt; rs = RandomState(MT19937(SeedSequence(987654321)))
+</code></pre></div>
+</dd>
 </dl>
 </section>
 <section>
@@ -471,7 +768,7 @@ if __name__ == &#39;__main__&#39;:
 <dl>
 <dt id="environment.Environment"><code class="flex name class">
 <span>class <span class="ident">Environment</span></span>
-<span>(</span><span>robot: <a title="environment.section" href="#environment.section">section</a>)</span>
+<span>(</span><span>robot: <a title="environment.Robot" href="#environment.Robot">Robot</a>)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Environment class holds the entire game. Where the
@@ -484,7 +781,8 @@ without hitting any obstacles in between
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class Environment:
-    def __init__(self, robot: section):
+
+    def __init__(self, robot: Robot):
         &#34;&#34;&#34;
         Environment class holds the entire game. Where the
         robot(made out of several sections) is the player. And the
@@ -492,6 +790,8 @@ without hitting any obstacles in between
         without hitting any obstacles in between
         :param robot: Section
         &#34;&#34;&#34;
+        turtle.setup(800, 600)
+        self.wn = None
         self.ground = turtle.Turtle()
         self.ground.hideturtle()
         self.taskSpace = {&#39;dim&#39;: (100, 100),
@@ -500,18 +800,21 @@ without hitting any obstacles in between
         self.robot = robot
         self.capPoints = 0
         self.points = []
-        self.makePoint()
+        self.generatePoint()
 
         self.rewardTool = turtle.Turtle()
         self.rewardTool.hideturtle()
-        self.drawReward()
+        # self.drawReward()
 
-        self.prevState = [self.robot.currentAngle,
-                          self.robot.sectionLen,
-                          distance(self.robot.getTipPos(),
-                                   self.points[0].pos())]  # Arc Parameters - Distance to Point
+        self.prevState = [0, 0, 0]
+        # self.prevState = [self.robot.currentAngle,
+        #                   self.robot.sectionLen,
+        #                   distance(self.robot.getTipPos(),
+        #                            (self.points[0][0], self.points[0][1]))]  # Arc Parameters - Distance to Point
+        #
+        self.currentState = self.prevState
 
-        self.observation = Observation(self.prevState, &#39;&#39;, )
+        self.observation = Observation(self.prevState, self.prevState, -self.prevState[2], 0)
 
     def drawTaskSpace(self):
         &#34;&#34;&#34;
@@ -555,9 +858,7 @@ without hitting any obstacles in between
         currently holds no physics
         :return: None
         &#34;&#34;&#34;
-        global wn
-
-        wn.tracer(600)
+        self.wn.tracer(600)
 
         self.ground.color(&#34;black&#34;)
         self.ground.down()
@@ -590,6 +891,27 @@ without hitting any obstacles in between
         self.rewardTool.down()
         self.rewardTool.write(&#34;Points: &#34; + str(self.capPoints), align=&#39;center&#39;)
 
+    def render(self):
+        if self.wn is None:
+            self.wn = turtle.Screen()
+            # self.wn.delay(0)
+            # self.wn.tracer(600)
+            self.drawGround()
+            # self.robot.setRender(True)
+
+            # self.robot.drawSection(self.robot.currentAngle)
+            # self.robot.displayCurve()
+        # self.wn.tracer(1000)
+        self.robot.render()
+
+        self.drawReward()
+        turtle.Screen().update()
+        # self.drawPoint()
+
+        # print(self.robot.getTipPos())
+        # turtle.Screen().getcanvas()
+        # self.wn.mainloop()
+
     def pointCapture(self):
         &#34;&#34;&#34;
         pointCapture checks if robot tipPosition is within a
@@ -603,13 +925,13 @@ without hitting any obstacles in between
         for i in range(len(self.points)):
             # Get Distance
 
-            pos = self.points[i].pos()
+            pos = self.points[i]
 
             a = pos[0] - tipPos[0]
             b = pos[1] - tipPos[1]
 
             c = math.sqrt(a ** 2 + b ** 2)
-            print(&#39;C val&#39;, c)
+
             if c &lt;= 0.5:
                 self.capPoints += 1
                 pCap = i
@@ -618,11 +940,9 @@ without hitting any obstacles in between
         if pCap is not None:
             self.points[pCap].clear()
             self.points.pop(pCap)
-            self.drawReward()
-            self.makePoint()
-
-    def reward(self):
-        return &#39;hello&#39;
+            self.generatePoint()
+            return True
+        return False
 
     def getObservation(self):
         # Current State, reward
@@ -634,26 +954,28 @@ without hitting any obstacles in between
         robot maxSection - minSection and maxCurvature - minCurvature
         :return: (x, y)
         &#34;&#34;&#34;
-        angle = random.uniform(-2 * math.pi, 2 * math.pi)
-        maxArcLen = robot.maxSectionLen
-        minArcLen = robot.minSectionLen
+        return [0, 0]
+        # angle = random.uniform(-2 * math.pi, 2 * math.pi)
+        # maxArcLen = self.robot.maxSectionLen
+        # minArcLen = self.robot.minSectionLen
+        #
+        # arcLen = random.randint(minArcLen, maxArcLen)
+        #
+        # radius = arcLen / angle
+        #
+        # t = np.linspace(0, angle, arcLen)
+        # x = radius * np.cos(t)
+        # y = radius * np.sin(t)
+        #
+        # point = [x[arcLen - 1] - radius, y[arcLen - 1]]
+        # self.points.append(point)
 
-        arcLen = random.randint(minArcLen, maxArcLen)
-
-        radius = arcLen / angle
-
-        t = np.linspace(0, angle, arcLen)
-        x = radius * np.cos(t)
-        y = radius * np.sin(t)
-
-        return [x[arcLen - 1] - radius, y[arcLen - 1]]
-
-    def makePoint(self):
+    def drawPoint(self):
         &#34;&#34;&#34;
-        makePoint generates a random point, draws a point on board
+        drawPoint generates a random point, draws a point on board
         :return: None
         &#34;&#34;&#34;
-        p = self.generatePoint()
+        p = self.points[0]
         point = turtle.Turtle()
         point.hideturtle()
         point.up()
@@ -662,18 +984,47 @@ without hitting any obstacles in between
         point.color(&#39;blue&#39;)
         point.down()
         point.dot(4)
-        self.points.append(point)
         point.up()
 
-    def robotStep(self, direction):
+    def robotStep(self, sec, direction):
+        &#34;&#34;&#34;
+        robotStep will take a step towards the specified direction
+        :param direction: integer (0,1,2,3)
+        :return: Observation
+        &#34;&#34;&#34;
+
+        self.robot.step(sec, direction)
+
+        &#39;&#39;&#39;
         robot = self.robot
-        # Save state
-        self.prevState = [robot.currentAngle,
-                          robot.sectionLen,
-                          distance(robot.getTipPos(), self.points[0].pos()),
-                          direction]
+        # Save previous state
+        self.prevState = self.currentState
+
         # Step
-        robot.controls[direction]()</code></pre>
+        robot.controls[direction]()
+        self.currentState = [robot.currentAngle,
+                             robot.sectionLen,
+                             distance(robot.getTipPos(), (self.points[0][0], self.points[0][1])), ]
+        reward = -self.currentState[2]
+
+        # Determine if a point was captured
+        capPoint = self.pointCapture()
+        if capPoint:
+            reward += 100
+
+        self.observation = Observation(self.prevState, self.currentState, reward, self.robot.controlNum[direction])
+        print(self.observation)
+        return self.observation
+        &#39;&#39;&#39;
+
+    def randomAction(self):
+        &#34;&#34;&#34;
+        randomAction will generate a random action
+        :return: int
+        &#34;&#34;&#34;
+        # TODO add in random seed
+        action = randint(0, 3)
+        return action</code></pre>
 </details>
 <h3>Methods</h3>
 <dl>
@@ -694,9 +1045,7 @@ currently holds no physics
     currently holds no physics
     :return: None
     &#34;&#34;&#34;
-    global wn
-
-    wn.tracer(600)
+    self.wn.tracer(600)
 
     self.ground.color(&#34;black&#34;)
     self.ground.down()
@@ -715,6 +1064,33 @@ currently holds no physics
 
     self.ground.up()
     self.ground.home()</code></pre>
+</details>
+</dd>
+<dt id="environment.Environment.drawPoint"><code class="name flex">
+<span>def <span class="ident">drawPoint</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>drawPoint generates a random point, draws a point on board
+:return: None</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def drawPoint(self):
+    &#34;&#34;&#34;
+    drawPoint generates a random point, draws a point on board
+    :return: None
+    &#34;&#34;&#34;
+    p = self.points[0]
+    point = turtle.Turtle()
+    point.hideturtle()
+    point.up()
+
+    point.setpos(p[0], p[1])
+    point.color(&#39;blue&#39;)
+    point.down()
+    point.dot(4)
+    point.up()</code></pre>
 </details>
 </dd>
 <dt id="environment.Environment.drawReward"><code class="name flex">
@@ -806,19 +1182,7 @@ robot maxSection - minSection and maxCurvature - minCurvature
     robot maxSection - minSection and maxCurvature - minCurvature
     :return: (x, y)
     &#34;&#34;&#34;
-    angle = random.uniform(-2 * math.pi, 2 * math.pi)
-    maxArcLen = robot.maxSectionLen
-    minArcLen = robot.minSectionLen
-
-    arcLen = random.randint(minArcLen, maxArcLen)
-
-    radius = arcLen / angle
-
-    t = np.linspace(0, angle, arcLen)
-    x = radius * np.cos(t)
-    y = radius * np.sin(t)
-
-    return [x[arcLen - 1] - radius, y[arcLen - 1]]</code></pre>
+    return [0, 0]</code></pre>
 </details>
 </dd>
 <dt id="environment.Environment.getObservation"><code class="name flex">
@@ -833,34 +1197,6 @@ robot maxSection - minSection and maxCurvature - minCurvature
 <pre><code class="python">def getObservation(self):
     # Current State, reward
     return</code></pre>
-</details>
-</dd>
-<dt id="environment.Environment.makePoint"><code class="name flex">
-<span>def <span class="ident">makePoint</span></span>(<span>self)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>makePoint generates a random point, draws a point on board
-:return: None</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def makePoint(self):
-    &#34;&#34;&#34;
-    makePoint generates a random point, draws a point on board
-    :return: None
-    &#34;&#34;&#34;
-    p = self.generatePoint()
-    point = turtle.Turtle()
-    point.hideturtle()
-    point.up()
-
-    point.setpos(p[0], p[1])
-    point.color(&#39;blue&#39;)
-    point.down()
-    point.dot(4)
-    self.points.append(point)
-    point.up()</code></pre>
 </details>
 </dd>
 <dt id="environment.Environment.pointCapture"><code class="name flex">
@@ -888,13 +1224,13 @@ the points and generate a new random points
     for i in range(len(self.points)):
         # Get Distance
 
-        pos = self.points[i].pos()
+        pos = self.points[i]
 
         a = pos[0] - tipPos[0]
         b = pos[1] - tipPos[1]
 
         c = math.sqrt(a ** 2 + b ** 2)
-        print(&#39;C val&#39;, c)
+
         if c &lt;= 0.5:
             self.capPoints += 1
             pCap = i
@@ -903,12 +1239,33 @@ the points and generate a new random points
     if pCap is not None:
         self.points[pCap].clear()
         self.points.pop(pCap)
-        self.drawReward()
-        self.makePoint()</code></pre>
+        self.generatePoint()
+        return True
+    return False</code></pre>
 </details>
 </dd>
-<dt id="environment.Environment.reward"><code class="name flex">
-<span>def <span class="ident">reward</span></span>(<span>self)</span>
+<dt id="environment.Environment.randomAction"><code class="name flex">
+<span>def <span class="ident">randomAction</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>randomAction will generate a random action
+:return: int</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def randomAction(self):
+    &#34;&#34;&#34;
+    randomAction will generate a random action
+    :return: int
+    &#34;&#34;&#34;
+    # TODO add in random seed
+    action = randint(0, 3)
+    return action</code></pre>
+</details>
+</dd>
+<dt id="environment.Environment.render"><code class="name flex">
+<span>def <span class="ident">render</span></span>(<span>self)</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -916,47 +1273,281 @@ the points and generate a new random points
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def reward(self):
-    return &#39;hello&#39;</code></pre>
+<pre><code class="python">def render(self):
+    if self.wn is None:
+        self.wn = turtle.Screen()
+        # self.wn.delay(0)
+        # self.wn.tracer(600)
+        self.drawGround()
+        # self.robot.setRender(True)
+
+        # self.robot.drawSection(self.robot.currentAngle)
+        # self.robot.displayCurve()
+    # self.wn.tracer(1000)
+    self.robot.render()
+
+    self.drawReward()
+    turtle.Screen().update()</code></pre>
 </details>
 </dd>
 <dt id="environment.Environment.robotStep"><code class="name flex">
-<span>def <span class="ident">robotStep</span></span>(<span>self, direction)</span>
+<span>def <span class="ident">robotStep</span></span>(<span>self, sec, direction)</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>robotStep will take a step towards the specified direction
+:param direction: integer (0,1,2,3)
+:return: Observation</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def robotStep(self, direction):
+<pre><code class="python">def robotStep(self, sec, direction):
+    &#34;&#34;&#34;
+    robotStep will take a step towards the specified direction
+    :param direction: integer (0,1,2,3)
+    :return: Observation
+    &#34;&#34;&#34;
+
+    self.robot.step(sec, direction)
+
+    &#39;&#39;&#39;
     robot = self.robot
-    # Save state
-    self.prevState = [robot.currentAngle,
-                      robot.sectionLen,
-                      distance(robot.getTipPos(), self.points[0].pos()),
-                      direction]
+    # Save previous state
+    self.prevState = self.currentState
+
     # Step
-    robot.controls[direction]()</code></pre>
+    robot.controls[direction]()
+    self.currentState = [robot.currentAngle,
+                         robot.sectionLen,
+                         distance(robot.getTipPos(), (self.points[0][0], self.points[0][1])), ]
+    reward = -self.currentState[2]
+
+    # Determine if a point was captured
+    capPoint = self.pointCapture()
+    if capPoint:
+        reward += 100
+
+    self.observation = Observation(self.prevState, self.currentState, reward, self.robot.controlNum[direction])
+    print(self.observation)
+    return self.observation
+    &#39;&#39;&#39;</code></pre>
 </details>
 </dd>
 </dl>
 </dd>
 <dt id="environment.Observation"><code class="flex name class">
 <span>class <span class="ident">Observation</span></span>
-<span>(</span><span>state: Any, reward: float, action: str)</span>
+<span>(</span><span>state: Any, nextState: Any, reward: float, action: float)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Observation(state: Any, reward: float, action: str)</p></div>
+<div class="desc"><p>Observation(state: Any, nextState: Any, reward: float, action: float)</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class Observation:
     state: Any
+    nextState: Any
     reward: float
-    action: str</code></pre>
+    action: float</code></pre>
 </details>
+</dd>
+<dt id="environment.Robot"><code class="flex name class">
+<span>class <span class="ident">Robot</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Robot class is a super class, which can be used to
+make a series of sections to work together.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Robot:
+    def __init__(self):
+        &#39;&#39;&#39;
+        Robot class is a super class, which can be used to
+        make a series of sections to work together.
+        &#39;&#39;&#39;
+        self.sections = []
+        self.zero = 0.00001
+
+    def newSection(self):
+        &#39;&#39;&#39;
+        newSection creates a new section and adds it to the end of
+        the robot. Default section is 100
+        :return: None
+        &#39;&#39;&#39;
+        newSection = section(100, 20)
+        angles = self.getAllCurrentAngles()
+        if len(self.sections) &gt;= 1:
+            newTip = self.sections[-1].getTipPos(angles)
+            newSection.setBaseLocation(newTip[0], newTip[1])
+
+        self.sections.append(newSection)
+
+    def getAllCurrentAngles(self):
+        &#39;&#39;&#39;
+        getAllCurrentAngles gets the curvature angle for each section
+        :return: list[float]
+        &#39;&#39;&#39;
+        angles = []
+        for i in range(len(self.sections)):
+            angle = self.sections[i].currentAngle
+            if angle != self.zero:
+                angles.append(angle)
+
+        return angles
+
+    def step(self, secNum, action):
+        &#39;&#39;&#39;
+        step methods will conduct the given action for the given section
+        :param secNum: Section number in the robot (index starting at 1)
+        :param action: action (l,r,c,e)
+        :return:  None
+        &#39;&#39;&#39;
+        secNum -= 1
+        # # Base Section
+
+        self.sections[secNum].controls[action]()
+
+        angles = self.getAllCurrentAngles()
+
+        tipPos = self.sections[secNum].getTipPos(angles[:secNum])
+        i = secNum + 1
+        while i &lt; len(self.sections):
+
+            self.sections[i].setBaseLocation(tipPos[0], tipPos[1])
+
+            tipPos = self.sections[i].getTipPos(angles[:i])
+            i += 1
+
+    def render(self):
+        &#39;&#39;&#39;
+        render will draw out each section
+        :return:
+        &#39;&#39;&#39;
+        angles = self.getAllCurrentAngles()
+        for i in range(len(self.sections)):
+            print(&#34;--------- Section &#34; + str(i) + &#39;-----------&#39;)
+            sec = self.sections[i]
+            transformations = angles[:i]
+            print(&#39;\t transformations:&#39;, transformations)
+            sec.drawSection(transformations)</code></pre>
+</details>
+<h3>Methods</h3>
+<dl>
+<dt id="environment.Robot.getAllCurrentAngles"><code class="name flex">
+<span>def <span class="ident">getAllCurrentAngles</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>getAllCurrentAngles gets the curvature angle for each section
+:return: list[float]</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def getAllCurrentAngles(self):
+    &#39;&#39;&#39;
+    getAllCurrentAngles gets the curvature angle for each section
+    :return: list[float]
+    &#39;&#39;&#39;
+    angles = []
+    for i in range(len(self.sections)):
+        angle = self.sections[i].currentAngle
+        if angle != self.zero:
+            angles.append(angle)
+
+    return angles</code></pre>
+</details>
+</dd>
+<dt id="environment.Robot.newSection"><code class="name flex">
+<span>def <span class="ident">newSection</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>newSection creates a new section and adds it to the end of
+the robot. Default section is 100
+:return: None</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def newSection(self):
+    &#39;&#39;&#39;
+    newSection creates a new section and adds it to the end of
+    the robot. Default section is 100
+    :return: None
+    &#39;&#39;&#39;
+    newSection = section(100, 20)
+    angles = self.getAllCurrentAngles()
+    if len(self.sections) &gt;= 1:
+        newTip = self.sections[-1].getTipPos(angles)
+        newSection.setBaseLocation(newTip[0], newTip[1])
+
+    self.sections.append(newSection)</code></pre>
+</details>
+</dd>
+<dt id="environment.Robot.render"><code class="name flex">
+<span>def <span class="ident">render</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>render will draw out each section
+:return:</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def render(self):
+    &#39;&#39;&#39;
+    render will draw out each section
+    :return:
+    &#39;&#39;&#39;
+    angles = self.getAllCurrentAngles()
+    for i in range(len(self.sections)):
+        print(&#34;--------- Section &#34; + str(i) + &#39;-----------&#39;)
+        sec = self.sections[i]
+        transformations = angles[:i]
+        print(&#39;\t transformations:&#39;, transformations)
+        sec.drawSection(transformations)</code></pre>
+</details>
+</dd>
+<dt id="environment.Robot.step"><code class="name flex">
+<span>def <span class="ident">step</span></span>(<span>self, secNum, action)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>step methods will conduct the given action for the given section
+:param secNum: Section number in the robot (index starting at 1)
+:param action: action (l,r,c,e)
+:return:
+None</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def step(self, secNum, action):
+    &#39;&#39;&#39;
+    step methods will conduct the given action for the given section
+    :param secNum: Section number in the robot (index starting at 1)
+    :param action: action (l,r,c,e)
+    :return:  None
+    &#39;&#39;&#39;
+    secNum -= 1
+    # # Base Section
+
+    self.sections[secNum].controls[action]()
+
+    angles = self.getAllCurrentAngles()
+
+    tipPos = self.sections[secNum].getTipPos(angles[:secNum])
+    i = secNum + 1
+    while i &lt; len(self.sections):
+
+        self.sections[i].setBaseLocation(tipPos[0], tipPos[1])
+
+        tipPos = self.sections[i].getTipPos(angles[:i])
+        i += 1</code></pre>
+</details>
+</dd>
+</dl>
 </dd>
 <dt id="environment.section"><code class="flex name class">
 <span>class <span class="ident">section</span></span>
@@ -979,11 +1570,25 @@ the points and generate a new random points
         :param sectionLen: Minimum section length\n
         :param maxSectionLen: Maximum Section length
         &#34;&#34;&#34;
+
+        self.baseLocation = [0, 0]
+        self.baseAngle = 0
+        self.transformations = []
+        # Set of baseLocations and Angles
+
         self.section = turtle.Turtle()
         self.section.color(&#39;red&#39;)
 
+        self.render = False
+
+        self.baseFrame = turtle.Turtle()
+        self.endFrame = turtle.Turtle()
+
         self.curve = turtle.Turtle()
         self.curve.color(&#39;green&#39;)
+
+        self.circle = turtle.Turtle()
+        self.circle.color(&#39;pink&#39;)
 
         self.sectionLen = sectionLen
         self.minSectionLen = sectionLen
@@ -994,8 +1599,8 @@ the points and generate a new random points
         self.currentAngle = self.zero
         self.tipPos = (0, 0)
 
-        self.drawSection(self.currentAngle)
-        self.displayCurve()
+        # self.drawSection(self.currentAngle)
+        # self.displayCurve()
 
         self.controls = {
             &#39;l&#39;: self.stepLeft,
@@ -1003,6 +1608,27 @@ the points and generate a new random points
             &#39;e&#39;: self.extendArm,
             &#39;c&#39;: self.contractArm
         }
+        self.controlNum = {
+            &#39;l&#39;: 0, &#39;r&#39;: 1, &#39;e&#39;: 2, &#39;c&#39;: 3
+        }
+
+    def setBaseLocation(self, x, y):
+        &#39;&#39;&#39;
+        setBaseLocation is used modify the starting position of
+        the section.
+        :param x: x coordinate of the new base position
+        :param y: y coordinate of the new base position
+        :return: None
+        &#39;&#39;&#39;
+        self.baseLocation = [x, y]
+
+    def setRender(self, state):
+        &#39;&#39;&#39;
+        setRender Method is used enable/disable rendering
+        :param state: bool
+        :return: None
+        &#39;&#39;&#39;
+        self.render = state
 
     def stepLeft(self):
         &#34;&#34;&#34;
@@ -1021,7 +1647,8 @@ the points and generate a new random points
             print(&#34;Left angle limit reached&#34;, self.currentAngle)
             return
 
-        self.drawSection(self.currentAngle)
+        if self.render:
+            self.drawSection(self.currentAngle)
 
     def stepRight(self):
         &#34;&#34;&#34;
@@ -1039,8 +1666,8 @@ the points and generate a new random points
             self.currentAngle += 0.01
             print(&#34;Right angle limit reached&#34;, self.currentAngle)
             return
-
-        self.drawSection(self.currentAngle)
+        if self.render:
+            self.drawSection(self.currentAngle)
 
     def extendArm(self):
         &#34;&#34;&#34;
@@ -1054,8 +1681,10 @@ the points and generate a new random points
             return
         else:
             self.sectionLen += 1
-        self.drawSection(self.currentAngle)
-        self.displayCurve()
+
+        if self.render:
+            self.drawSection(self.currentAngle)
+            self.displayCurve()
         return
 
     def contractArm(self):
@@ -1070,11 +1699,14 @@ the points and generate a new random points
             return
         else:
             self.sectionLen -= 1
-        self.drawSection(self.currentAngle)
-        self.displayCurve()
+
+        if self.render:
+            self.drawSection(self.currentAngle)
+            self.displayCurve()
+
         return
 
-    def drawSection(self, angle):
+    def drawSection(self, transformations):
         &#34;&#34;&#34;
         drawSection will draw the current representation of the section
         based on the given angle and current section length
@@ -1083,32 +1715,84 @@ the points and generate a new random points
         &#34;&#34;&#34;
         self.section.clear()
         self.section.hideturtle()
-        wn.tracer(self.sectionLen)
-        if angle == 0:
+        self.section.up()
+        self.section.setpos(self.baseLocation[0], self.baseLocation[1])
+
+        angle = self.currentAngle
+        if angle == 0:  # Use epsilon difference
             angle = self.zero
 
-        radius = self.sectionLen / angle
+        radius = self.sectionLen / angle  # curvature is 0 ==&gt; radius is infinite
 
         t = np.linspace(0, angle, self.sectionLen)
         x = radius * np.cos(t)
         y = radius * np.sin(t)
 
+        allPoints = np.vstack((x, y)).T
+        allPoints[:,0] = allPoints[:,0] - radius
+
+
+        print(&#34;\t First Point&#34;, allPoints[0])
+        print(&#34;\t Base Location:&#34;, self.baseLocation)
+
+        for i in range(len(transformations)):
+            baseAngle = transformations[i]
+            r = np.array(((np.cos(baseAngle), -np.sin(baseAngle)),
+                          (np.sin(baseAngle), np.cos(baseAngle))))
+            allPoints = np.dot(r, allPoints.T).T
+
+        allPoints[:,0] = allPoints[:,0] + self.baseLocation[0]
+        allPoints[:, 1] = allPoints[:, 1] + self.baseLocation[1]
+
+
         for n in range(self.sectionLen):
+            px = allPoints[n][0]
+            py = allPoints[n][1]
+
+            if n == 0 or n == self.sectionLen - 1:
+                print(&#39;\tPoint=&#39; + str(n) + &#39; :&#39;, px, py)
+
             self.section.down()
-            self.section.setpos(x[n] - radius, y[n])
+            self.section.setpos(px, py)
             self.section.up()
 
-        self.tipPos = (x[len(x) - 1] - radius, y[len(y) - 1])
+        # self.tipPos = (x[len(x) - 1] - radius, y[len(y) - 1])
         self.section.home()
 
-    def getTipPos(self):
+    def getTipPos(self, transformations):
         &#34;&#34;&#34;
         getTipPos return a (x,y) coordinate of where the tip of the section is located
         :return: float
         &#34;&#34;&#34;
-        return self.tipPos
+        angle = self.currentAngle
 
-    def displayCurve(self):
+        radius = self.sectionLen / self.currentAngle
+
+        t = np.linspace(0, angle, self.sectionLen)
+        x = radius * np.cos(t)
+        y = radius * np.sin(t)
+
+        allPoints = np.vstack((x, y)).T
+        allPoints[:,0] = allPoints[:,0] - radius
+
+        for i in range(len(transformations)):
+            baseAngle = transformations[i]
+            r = np.array(((np.cos(baseAngle), -np.sin(baseAngle)),
+                          (np.sin(baseAngle), np.cos(baseAngle))))
+
+            allPoints = np.dot(r, allPoints.T).T
+
+        allPoints[:, 0] = allPoints[:, 0] + self.baseLocation[0]
+        allPoints[:, 1] = allPoints[:, 1] + self.baseLocation[1]
+
+        px = allPoints[-1][0]
+        py = allPoints[-1][1]
+
+        point = [px, py]
+
+        return point
+
+    def displayCurve(self, transformations):
         &#34;&#34;&#34;
         displayCurve is used of visualize all the positions that the
         section can be configured to based on its current section length
@@ -1117,6 +1801,7 @@ the points and generate a new random points
         tool = self.curve
         tool.clear()
         tool.hideturtle()
+        tool.up()
 
         ang = np.linspace(-2 * math.pi, 2 * math.pi, 500)
 
@@ -1127,7 +1812,22 @@ the points and generate a new random points
             t = np.linspace(0, angle, self.sectionLen)
             x = radius * np.cos(t)
             y = radius * np.sin(t)
-            self.curve.goto(x[len(x) - 1] - radius, y[len(x) - 1])
+
+            x = x[-1]
+            y = y[-1]
+
+            x = x - radius
+            points = [x,y]
+            for i in range(len(transformations)):
+                baseAngle = transformations[i]
+                r = np.array(((np.cos(baseAngle), -np.sin(baseAngle)),
+                              (np.sin(baseAngle), np.cos(baseAngle))))
+                points = np.dot(r, points)
+
+            points[0] = points[0] + self.baseLocation[0]
+            points[1] = points[1] + self.baseLocation[1]
+
+            self.curve.goto(points[0], points[1])
             self.curve.dot(2, &#39;green&#39;)
             self.curve.up()</code></pre>
 </details>
@@ -1157,13 +1857,16 @@ constant
         return
     else:
         self.sectionLen -= 1
-    self.drawSection(self.currentAngle)
-    self.displayCurve()
+
+    if self.render:
+        self.drawSection(self.currentAngle)
+        self.displayCurve()
+
     return</code></pre>
 </details>
 </dd>
 <dt id="environment.section.displayCurve"><code class="name flex">
-<span>def <span class="ident">displayCurve</span></span>(<span>self)</span>
+<span>def <span class="ident">displayCurve</span></span>(<span>self, transformations)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>displayCurve is used of visualize all the positions that the
@@ -1173,7 +1876,7 @@ section can be configured to based on its current section length
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def displayCurve(self):
+<pre><code class="python">def displayCurve(self, transformations):
     &#34;&#34;&#34;
     displayCurve is used of visualize all the positions that the
     section can be configured to based on its current section length
@@ -1182,6 +1885,7 @@ section can be configured to based on its current section length
     tool = self.curve
     tool.clear()
     tool.hideturtle()
+    tool.up()
 
     ang = np.linspace(-2 * math.pi, 2 * math.pi, 500)
 
@@ -1192,13 +1896,28 @@ section can be configured to based on its current section length
         t = np.linspace(0, angle, self.sectionLen)
         x = radius * np.cos(t)
         y = radius * np.sin(t)
-        self.curve.goto(x[len(x) - 1] - radius, y[len(x) - 1])
+
+        x = x[-1]
+        y = y[-1]
+
+        x = x - radius
+        points = [x,y]
+        for i in range(len(transformations)):
+            baseAngle = transformations[i]
+            r = np.array(((np.cos(baseAngle), -np.sin(baseAngle)),
+                          (np.sin(baseAngle), np.cos(baseAngle))))
+            points = np.dot(r, points)
+
+        points[0] = points[0] + self.baseLocation[0]
+        points[1] = points[1] + self.baseLocation[1]
+
+        self.curve.goto(points[0], points[1])
         self.curve.dot(2, &#39;green&#39;)
         self.curve.up()</code></pre>
 </details>
 </dd>
 <dt id="environment.section.drawSection"><code class="name flex">
-<span>def <span class="ident">drawSection</span></span>(<span>self, angle)</span>
+<span>def <span class="ident">drawSection</span></span>(<span>self, transformations)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>drawSection will draw the current representation of the section
@@ -1209,7 +1928,7 @@ based on the given angle and current section length
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def drawSection(self, angle):
+<pre><code class="python">def drawSection(self, transformations):
     &#34;&#34;&#34;
     drawSection will draw the current representation of the section
     based on the given angle and current section length
@@ -1218,22 +1937,48 @@ based on the given angle and current section length
     &#34;&#34;&#34;
     self.section.clear()
     self.section.hideturtle()
-    wn.tracer(self.sectionLen)
-    if angle == 0:
+    self.section.up()
+    self.section.setpos(self.baseLocation[0], self.baseLocation[1])
+
+    angle = self.currentAngle
+    if angle == 0:  # Use epsilon difference
         angle = self.zero
 
-    radius = self.sectionLen / angle
+    radius = self.sectionLen / angle  # curvature is 0 ==&gt; radius is infinite
 
     t = np.linspace(0, angle, self.sectionLen)
     x = radius * np.cos(t)
     y = radius * np.sin(t)
 
+    allPoints = np.vstack((x, y)).T
+    allPoints[:,0] = allPoints[:,0] - radius
+
+
+    print(&#34;\t First Point&#34;, allPoints[0])
+    print(&#34;\t Base Location:&#34;, self.baseLocation)
+
+    for i in range(len(transformations)):
+        baseAngle = transformations[i]
+        r = np.array(((np.cos(baseAngle), -np.sin(baseAngle)),
+                      (np.sin(baseAngle), np.cos(baseAngle))))
+        allPoints = np.dot(r, allPoints.T).T
+
+    allPoints[:,0] = allPoints[:,0] + self.baseLocation[0]
+    allPoints[:, 1] = allPoints[:, 1] + self.baseLocation[1]
+
+
     for n in range(self.sectionLen):
+        px = allPoints[n][0]
+        py = allPoints[n][1]
+
+        if n == 0 or n == self.sectionLen - 1:
+            print(&#39;\tPoint=&#39; + str(n) + &#39; :&#39;, px, py)
+
         self.section.down()
-        self.section.setpos(x[n] - radius, y[n])
+        self.section.setpos(px, py)
         self.section.up()
 
-    self.tipPos = (x[len(x) - 1] - radius, y[len(y) - 1])
+    # self.tipPos = (x[len(x) - 1] - radius, y[len(y) - 1])
     self.section.home()</code></pre>
 </details>
 </dd>
@@ -1261,13 +2006,15 @@ constant
         return
     else:
         self.sectionLen += 1
-    self.drawSection(self.currentAngle)
-    self.displayCurve()
+
+    if self.render:
+        self.drawSection(self.currentAngle)
+        self.displayCurve()
     return</code></pre>
 </details>
 </dd>
 <dt id="environment.section.getTipPos"><code class="name flex">
-<span>def <span class="ident">getTipPos</span></span>(<span>self)</span>
+<span>def <span class="ident">getTipPos</span></span>(<span>self, transformations)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>getTipPos return a (x,y) coordinate of where the tip of the section is located
@@ -1276,12 +2023,82 @@ constant
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def getTipPos(self):
+<pre><code class="python">def getTipPos(self, transformations):
     &#34;&#34;&#34;
     getTipPos return a (x,y) coordinate of where the tip of the section is located
     :return: float
     &#34;&#34;&#34;
-    return self.tipPos</code></pre>
+    angle = self.currentAngle
+
+    radius = self.sectionLen / self.currentAngle
+
+    t = np.linspace(0, angle, self.sectionLen)
+    x = radius * np.cos(t)
+    y = radius * np.sin(t)
+
+    allPoints = np.vstack((x, y)).T
+    allPoints[:,0] = allPoints[:,0] - radius
+
+    for i in range(len(transformations)):
+        baseAngle = transformations[i]
+        r = np.array(((np.cos(baseAngle), -np.sin(baseAngle)),
+                      (np.sin(baseAngle), np.cos(baseAngle))))
+
+        allPoints = np.dot(r, allPoints.T).T
+
+    allPoints[:, 0] = allPoints[:, 0] + self.baseLocation[0]
+    allPoints[:, 1] = allPoints[:, 1] + self.baseLocation[1]
+
+    px = allPoints[-1][0]
+    py = allPoints[-1][1]
+
+    point = [px, py]
+
+    return point</code></pre>
+</details>
+</dd>
+<dt id="environment.section.setBaseLocation"><code class="name flex">
+<span>def <span class="ident">setBaseLocation</span></span>(<span>self, x, y)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>setBaseLocation is used modify the starting position of
+the section.
+:param x: x coordinate of the new base position
+:param y: y coordinate of the new base position
+:return: None</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def setBaseLocation(self, x, y):
+    &#39;&#39;&#39;
+    setBaseLocation is used modify the starting position of
+    the section.
+    :param x: x coordinate of the new base position
+    :param y: y coordinate of the new base position
+    :return: None
+    &#39;&#39;&#39;
+    self.baseLocation = [x, y]</code></pre>
+</details>
+</dd>
+<dt id="environment.section.setRender"><code class="name flex">
+<span>def <span class="ident">setRender</span></span>(<span>self, state)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>setRender Method is used enable/disable rendering
+:param state: bool
+:return: None</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def setRender(self, state):
+    &#39;&#39;&#39;
+    setRender Method is used enable/disable rendering
+    :param state: bool
+    :return: None
+    &#39;&#39;&#39;
+    self.render = state</code></pre>
 </details>
 </dd>
 <dt id="environment.section.stepLeft"><code class="name flex">
@@ -1313,7 +2130,8 @@ increase the angle by 0.01
         print(&#34;Left angle limit reached&#34;, self.currentAngle)
         return
 
-    self.drawSection(self.currentAngle)</code></pre>
+    if self.render:
+        self.drawSection(self.currentAngle)</code></pre>
 </details>
 </dd>
 <dt id="environment.section.stepRight"><code class="name flex">
@@ -1344,8 +2162,8 @@ decrease the angle by 0.01
         self.currentAngle += 0.01
         print(&#34;Right angle limit reached&#34;, self.currentAngle)
         return
-
-    self.drawSection(self.currentAngle)</code></pre>
+    if self.render:
+        self.drawSection(self.currentAngle)</code></pre>
 </details>
 </dd>
 </dl>
@@ -1362,6 +2180,8 @@ decrease the angle by 0.01
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
 <li><code><a title="environment.distance" href="#environment.distance">distance</a></code></li>
+<li><code><a title="environment.randint" href="#environment.randint">randint</a></code></li>
+<li><code><a title="environment.seed" href="#environment.seed">seed</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>
@@ -1370,18 +2190,28 @@ decrease the angle by 0.01
 <h4><code><a title="environment.Environment" href="#environment.Environment">Environment</a></code></h4>
 <ul class="two-column">
 <li><code><a title="environment.Environment.drawGround" href="#environment.Environment.drawGround">drawGround</a></code></li>
+<li><code><a title="environment.Environment.drawPoint" href="#environment.Environment.drawPoint">drawPoint</a></code></li>
 <li><code><a title="environment.Environment.drawReward" href="#environment.Environment.drawReward">drawReward</a></code></li>
 <li><code><a title="environment.Environment.drawTaskSpace" href="#environment.Environment.drawTaskSpace">drawTaskSpace</a></code></li>
 <li><code><a title="environment.Environment.generatePoint" href="#environment.Environment.generatePoint">generatePoint</a></code></li>
 <li><code><a title="environment.Environment.getObservation" href="#environment.Environment.getObservation">getObservation</a></code></li>
-<li><code><a title="environment.Environment.makePoint" href="#environment.Environment.makePoint">makePoint</a></code></li>
 <li><code><a title="environment.Environment.pointCapture" href="#environment.Environment.pointCapture">pointCapture</a></code></li>
-<li><code><a title="environment.Environment.reward" href="#environment.Environment.reward">reward</a></code></li>
+<li><code><a title="environment.Environment.randomAction" href="#environment.Environment.randomAction">randomAction</a></code></li>
+<li><code><a title="environment.Environment.render" href="#environment.Environment.render">render</a></code></li>
 <li><code><a title="environment.Environment.robotStep" href="#environment.Environment.robotStep">robotStep</a></code></li>
 </ul>
 </li>
 <li>
 <h4><code><a title="environment.Observation" href="#environment.Observation">Observation</a></code></h4>
+</li>
+<li>
+<h4><code><a title="environment.Robot" href="#environment.Robot">Robot</a></code></h4>
+<ul class="">
+<li><code><a title="environment.Robot.getAllCurrentAngles" href="#environment.Robot.getAllCurrentAngles">getAllCurrentAngles</a></code></li>
+<li><code><a title="environment.Robot.newSection" href="#environment.Robot.newSection">newSection</a></code></li>
+<li><code><a title="environment.Robot.render" href="#environment.Robot.render">render</a></code></li>
+<li><code><a title="environment.Robot.step" href="#environment.Robot.step">step</a></code></li>
+</ul>
 </li>
 <li>
 <h4><code><a title="environment.section" href="#environment.section">section</a></code></h4>
@@ -1391,6 +2221,8 @@ decrease the angle by 0.01
 <li><code><a title="environment.section.drawSection" href="#environment.section.drawSection">drawSection</a></code></li>
 <li><code><a title="environment.section.extendArm" href="#environment.section.extendArm">extendArm</a></code></li>
 <li><code><a title="environment.section.getTipPos" href="#environment.section.getTipPos">getTipPos</a></code></li>
+<li><code><a title="environment.section.setBaseLocation" href="#environment.section.setBaseLocation">setBaseLocation</a></code></li>
+<li><code><a title="environment.section.setRender" href="#environment.section.setRender">setRender</a></code></li>
 <li><code><a title="environment.section.stepLeft" href="#environment.section.stepLeft">stepLeft</a></code></li>
 <li><code><a title="environment.section.stepRight" href="#environment.section.stepRight">stepRight</a></code></li>
 </ul>
