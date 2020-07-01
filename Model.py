@@ -55,8 +55,8 @@ if __name__ == '__main__':
     arcLength = 100
 
     robot = Robot()
-    robot.addSection()
-    robot.addSection()
+    robot.newSection()
+    robot.newSection()
 
     base = Environment(robot)
     base.render()
@@ -65,17 +65,12 @@ if __name__ == '__main__':
 
     robot.sections[-1].section.color('black')
 
-    # model = Model(3, 4)
-    # targetModel = Model(3, 4)
-    # updateTGTModel(model, targetModel)
-    x = turtle.Turtle()
-    x.color('purple')
-    x.width(5)
     while True:
+        secNum = int(input("Enter SecNum: "))
         direction = str(input("Enter direction: "))
 
         for i in range(10):
-            base.robotStep(1, direction)
+            base.robotStep(secNum, direction)
             base.render()
 
 

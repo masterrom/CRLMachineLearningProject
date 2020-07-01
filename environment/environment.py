@@ -247,7 +247,7 @@ class section:
 
         return point
 
-    def displayCurve(self):
+    def displayCurve(self, transformations):
         """
         displayCurve is used of visualize all the positions that the
         section can be configured to based on its current section length
@@ -256,6 +256,7 @@ class section:
         tool = self.curve
         tool.clear()
         tool.hideturtle()
+        tool.up()
 
         ang = np.linspace(-2 * math.pi, 2 * math.pi, 500)
 
@@ -266,9 +267,25 @@ class section:
             t = np.linspace(0, angle, self.sectionLen)
             x = radius * np.cos(t)
             y = radius * np.sin(t)
-            self.curve.goto(x[len(x) - 1] - radius, y[len(x) - 1])
+
+            x = x[-1]
+            y = y[-1]
+
+            x = x - radius
+            points = [x,y]
+            for i in range(len(transformations)):
+                baseAngle = transformations[i]
+                r = np.array(((np.cos(baseAngle), -np.sin(baseAngle)),
+                              (np.sin(baseAngle), np.cos(baseAngle))))
+                points = np.dot(r, points)
+
+            points[0] = points[0] + self.baseLocation[0]
+            points[1] = points[1] + self.baseLocation[1]
+
+            self.curve.goto(points[0], points[1])
             self.curve.dot(2, 'green')
             self.curve.up()
+
 
     def drawBaseFrame(self):
         x = self.baseFrame
@@ -362,9 +379,7 @@ class Robot:
             transformations = angles[:i]
             print('\t transformations:', transformations)
             sec.drawSection(transformations)
-
-
-
+            # sec.displayCurve(transformations)
 
 
 # Each sections tip position will be the starting point of the robot
