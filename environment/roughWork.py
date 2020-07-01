@@ -164,6 +164,7 @@ class section:
         allPoints = np.vstack((x, y)).T
         allPoints[:,0] = allPoints[:,0] - radius
 
+
         print("\t First Point", allPoints[0])
         print("\t Section Length", len(allPoints))
         print("\t Base Angle:", self.baseAngle)
@@ -171,10 +172,13 @@ class section:
 
         r = np.array(((np.cos(self.baseAngle), -np.sin(self.baseAngle)),
                       (np.sin(self.baseAngle), np.cos(self.baseAngle))))
-        
+
+        allPoints = np.dot(allPoints, r)
+        allPoints[:,0] = allPoints[:,0] + self.baseLocation[0]
+        allPoints[:, 1] = allPoints[:, 1] + self.baseLocation[1]
+
         print("\t R:",r)
 
-        points = []
         for n in range(self.sectionLen):
             px = allPoints[n][0]
             py = allPoints[n][1]
@@ -184,12 +188,11 @@ class section:
             if n == 0 or n == self.sectionLen - 1:
                 print('\tPoint=' + str(n) + ' :', px, py)
 
-            point = np.dot(r, [px, py])
-
-
-            px = point[0] + self.baseLocation[0]
-            py = point[1] + self.baseLocation[1]
-            points.append([px, py])
+            # point = np.dot(r, [px, py])
+            #
+            #
+            # px = point[0] + self.baseLocation[0]
+            # py = point[1] + self.baseLocation[1]
             self.section.down()
             self.section.setpos(px, py)
             self.section.up()
@@ -197,7 +200,6 @@ class section:
         # self.tipPos = (x[len(x) - 1] - radius, y[len(y) - 1])
         self.section.home()
 
-        return points
 
     def getTipPos(self):
         """
