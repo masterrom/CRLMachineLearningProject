@@ -16,6 +16,8 @@ class section:
 
         self.baseLocation = [0, 0]
         self.baseAngle = 0
+        self.transformations = []
+        # Set of baseLocations and Angles
 
         self.section = turtle.Turtle()
         self.section.color('red')
@@ -158,9 +160,9 @@ class section:
         t = np.linspace(0, angle, self.sectionLen)
         x = radius * np.cos(t)
         y = radius * np.sin(t)
-        z = [0] * self.sectionLen
 
-        allPoints = np.vstack((x, y, z)).T
+        allPoints = np.vstack((x, y)).T
+        allPoints[:,0] = allPoints[:,0] - radius
 
         print("\t First Point", allPoints[0])
         print("\t Section Length", len(allPoints))
@@ -169,12 +171,12 @@ class section:
 
         r = np.array(((np.cos(self.baseAngle), -np.sin(self.baseAngle)),
                       (np.sin(self.baseAngle), np.cos(self.baseAngle))))
-
+        
         print("\t R:",r)
 
         points = []
         for n in range(self.sectionLen):
-            px = allPoints[n][0] - radius
+            px = allPoints[n][0]
             py = allPoints[n][1]
             # TODO transformation matrix previous to current configuration
 
@@ -209,9 +211,8 @@ class section:
         t = np.linspace(0, angle, self.sectionLen)
         x = radius * np.cos(t)
         y = radius * np.sin(t)
-        z = [0] * self.sectionLen
 
-        allPoints = np.vstack((x, y, z)).T
+        allPoints = np.vstack((x, y)).T
 
         r = np.array(((np.cos(self.baseAngle), -np.sin(self.baseAngle)),
                       (np.sin(self.baseAngle), np.cos(self.baseAngle))))
@@ -290,61 +291,116 @@ class section:
         self.circle.circle(radius)
 
 
+
+
+class Robot:
+    def __init__(self):
+        self.sections = []
+
+    def newSection(self):
+        newSection = section(100, 20)
+        if len(self.sections) >= 1:
+            newTip = self.sections[-1].getTipPos()
+            newSection.setBaseLocation(newTip[0], newTip[1])
+            newSection.setBaseAngle(self.sections[-1].currentAngle)
+        self.sections.append(newSection)
+
+    def step(self, secNum, action):
+        secNum -= 1
+
+        # Base Section
+        self.sections[secNum].controls[action]()
+        angle = self.sections[secNum].currentAngle
+        tipPos = self.sections[secNum].getTipPos()
+        i = secNum + 1
+        while i < len(self.sections):
+            self.sections[i].setBaseAngle(angle)
+            self.sections[i].setBaseLocation(tipPos[0], tipPos[1])
+
+            angle = self.sections[i].currentAngle
+            tipPos = self.sections[i].getTipPos()
+            i += 1
+
+        #     self.sections[secNum+1].setBaseAngle(self.sections[secNum].currentAngle)
+        #     newTip = self.sections[secNum].getTipPos()
+        #     self.sections[secNum+1].setBaseLocation(newTip[0], newTip[1])
+        # elif secNum == 1:
+        #     self.sections[secNum].controls[action]()
+        #     angle = self.sections[secNum].currentAngle
+        #     tipPos = self.sections[secNum].getTipPos()
+        #     self.sections[secNum + 1].setBaseAngle(angle)
+        #     self.sections[secNum + 1].setBaseLocation(tipPos[0], tipPos[1])
+        # elif secNum == 2:
+        #     self.sections[secNum].controls[action]()
+
+    def render(self):
+        for i in range(len(self.sections)):
+            sec = self.sections[i]
+            sec.drawSection(sec.currentAngle)
+
+        wn.update()
+
+
+
+
 if __name__ == '__main__':
-    turtle.setup(800, 600)
+    turtle.setup(600, 800)
     wn = turtle.Screen()
     wn.delay(0)
     wn.tracer(1000)
 
-    diff = turtle.Turtle()
-    diff.hideturtle()
-    diff.color('green')
-    diff.width(2)
 
-    sec1 = section(100, 20)
+    # sec1 = section(100, 20)
+    # sec2 = section(100, 20)
+    # sec2.section.color('purple')
+    #
+    # newTip = sec1.getTipPos()
+    # sec2.setBaseLocation(newTip[0], newTip[1])
+    # sec2.setBaseAngle(sec1.currentAngle)
+    #
+    #
+    # def render(sec):
+    #     points = sec.drawSection(sec.currentAngle)
+    #     sec.drawEndFrame()
+    #     wn.update()
+    #     print('\n')
+    #     return points
+    #
+    #
+    # def drawItout(t, ps: list):
+    #     t.clear()
+    #     t.up()
+    #     t.home()
+    #     for item in ps:
+    #         # t.down()
+    #         t.setpos(item[0], item[1])
+    #         t.dot(2, 'blue')
+    #         t.up
+    robot = Robot()
+    robot.newSection()
+    robot.newSection()
+    robot.newSection()
 
-    sec2 = section(100, 20)
-    sec2.section.color('purple')
-
-    newTip = sec1.getTipPos()
-    sec2.setBaseLocation(newTip[0], newTip[1])
-    sec2.setBaseAngle(sec1.currentAngle)
+    robot.render()
 
 
-    def render(sec):
-        points = sec.drawSection(sec.currentAngle)
-        sec.drawEndFrame()
-        wn.update()
-        print('\n')
-        return points
-
-
-    def drawItout(t, ps: list):
-        t.clear()
-        t.up()
-        t.home()
-        for item in ps:
-            # t.down()
-            t.setpos(item[0], item[1])
-            t.dot(2, 'blue')
-            t.up
-
-
-    render(sec1)
-    render(sec2)
+    # render(sec1)
+    # render(sec2)
 
     while True:
+        secNum = int(input('Enter section Number: '))
         dir = str(input("Direction: "))
 
         for i in range(10):
-            sec1.controls[dir]()
+            robot.step(secNum, dir)
+            robot.render()
+            # sec1.controls[dir]()
+            #
+            # sec2.setBaseAngle(sec1.currentAngle)
+            # newTip = sec1.getTipPos()
+            # sec2.setBaseLocation(newTip[0], newTip[1])
+            #
+            # render(sec1)
+            # points = (render(sec2))
 
-            sec2.setBaseAngle(sec1.currentAngle)
-            newTip = sec1.getTipPos()
-            sec2.setBaseLocation(newTip[0], newTip[1])
-
-            render(sec1)
-            points = (render(sec2))
-
-            drawItout(diff, points)
             wn.update()

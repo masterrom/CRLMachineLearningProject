@@ -24,20 +24,6 @@ def distance(a, b):
     y = a[1] - b[1]
     return math.sqrt(x ** 2 + y ** 2)
 
-def rotation_matrix(axis, theta):
-    """
-    Return the rotation matrix associated with counterclockwise rotation about
-    the given axis by theta radians.
-    """
-    axis = np.asarray(axis)
-    axis = axis / math.sqrt(np.dot(axis, axis))
-    a = math.cos(theta / 2.0)
-    b, c, d = -axis * math.sin(theta / 2.0)
-    aa, bb, cc, dd = a * a, b * b, c * c, d * d
-    bc, ad, ac, ab, bd, cd = b * c, a * d, a * c, a * b, b * d, c * d
-    return np.array([[aa + bb - cc - dd, 2 * (bc + ad), 2 * (bd - ac)],
-                     [2 * (bc - ad), aa + cc - bb - dd, 2 * (cd + ab)],
-                     [2 * (bd + ac), 2 * (cd - ab), aa + dd - bb - cc]])
 
 class section:
 
@@ -51,6 +37,8 @@ class section:
 
         self.baseLocation = [0, 0]
         self.baseAngle = 0
+
+        self.transformations = []
 
         self.section = turtle.Turtle()
         self.section.color('red')
@@ -185,35 +173,44 @@ class section:
         self.section.up()
         self.section.setpos(self.baseLocation[0], self.baseLocation[1])
 
-        # wn.tracer(self.sectionLen)
-        if angle == 0:
+        if angle == 0:  # Use epsilon difference
             angle = self.zero
 
-        radius = self.sectionLen / angle
+        radius = self.sectionLen / angle  # curvature is 0 ==> radius is infinite
 
         t = np.linspace(0, angle, self.sectionLen)
         x = radius * np.cos(t)
         y = radius * np.sin(t)
         z = [0] * self.sectionLen
 
-        allPoints = np.vstack((x,y,z)).T
-        print("\t", allPoints[0])
-        print("\t sectionLen", self.sectionLen)
-        axisOfRotation = [0,0,1]
-        rotationMatrix = rotation_matrix(axisOfRotation, self.baseAngle)
-        print("\t baseAngle:", self.baseAngle)
+        allPoints = np.vstack((x, y, z)).T
 
-        import ipdb; ipdb.set_trace()
-        xx = []
-        yy = []
+        print("\t First Point", allPoints[0])
+        print("\t Section Length", len(allPoints))
+        print("\t Base Angle:", self.baseAngle)
+        print("\t Base Location:", self.baseLocation)
+
+        r = np.array(((np.cos(self.baseAngle), -np.sin(self.baseAngle)),
+                      (np.sin(self.baseAngle), np.cos(self.baseAngle))))
+
+        print("\t R:",r)
+
+        points = []
         for n in range(self.sectionLen):
-            point = np.dot(rotationMatrix, allPoints[n])
-            if n == 0 or n == self.sectionLen-1:
-                print('\t', point[0], point[1])
-            px = point[0] - radius + self.baseLocation[0]
+            px = allPoints[n][0] - radius
+            py = allPoints[n][1]
+            # TODO transformation matrix previous to current configuration
+
+
+            if n == 0 or n == self.sectionLen - 1:
+                print('\tPoint=' + str(n) + ' :', px, py)
+
+            point = np.dot(r, [px, py])
+
+
+            px = point[0] + self.baseLocation[0]
             py = point[1] + self.baseLocation[1]
-            xx.append(px)
-            yy.append(py)
+            points.append([px, py])
             self.section.down()
             self.section.setpos(px, py)
             self.section.up()
@@ -221,20 +218,43 @@ class section:
         # self.tipPos = (x[len(x) - 1] - radius, y[len(y) - 1])
         self.section.home()
 
-        return (xx, yy)
+        return points
 
     def getTipPos(self):
         """
         getTipPos return a (x,y) coordinate of where the tip of the section is located
         :return: float
         """
-        radius = self.sectionLen / self.currentAngle
+        angle = self.currentAngle
 
-        t = np.linspace(0, self.currentAngle, self.sectionLen)
-        x = radius * np.cos(t) + self.baseLocation[0]
-        y = radius * np.sin(t) + self.baseLocation[1]
+        if angle == 0:  # Use epsilon difference
+            angle = self.zero
 
-        return (x[len(x) - 1] - radius, y[len(y) - 1])
+        radius = self.sectionLen / angle  # curvature is 0 ==> radius is infinite
+
+        t = np.linspace(0, angle, self.sectionLen)
+        x = radius * np.cos(t)
+        y = radius * np.sin(t)
+        z = [0] * self.sectionLen
+
+        allPoints = np.vstack((x, y, z)).T
+        allPoints[:,0] = allPoints[:,0] - radius
+
+
+        for item in self.transformations:
+            baseAngle = item['currentAngle']
+            baseLocation = item['baseLocation']
+            r = np.array(((np.cos(baseAngle), -np.sin(baseAngle)),
+                          (np.sin(baseAngle), np.cos(baseAngle))))
+
+
+
+        return
+
+        # return (x[len(x) - 1] - radius, y[len(y) - 1])
+
+    def getCurrentAngle(self):
+        return self.currentAngle
 
     def displayCurve(self):
         """
@@ -280,7 +300,7 @@ class section:
         end.hideturtle()
         tip = self.getTipPos()
 
-        angle = np.rad2deg(self.baseAngle)
+        angle = np.rad2deg(self.currentAngle)
 
         end.up()
         end.setpos(tip[0], tip[1])
@@ -302,13 +322,11 @@ class section:
         self.circle.circle(radius)
 
 
+
 class Robot:
-    def __init__(self):
-        self.sections = []
-        self.checkLine = turtle.Turtle()
-        self.checkLine.hideturtle()
-        self.checkLine.color('black')
-        self.checkLine.width(3)
+    def __init__(self, sections: list[section] ):
+        self.sections = [] # : sections = [sections]
+
 
     def addSection(self, minSection=100, maxSectionIncrement=40):
         newSection = section(minSection, maxSectionIncrement)
@@ -326,30 +344,32 @@ class Robot:
         for i in range(len(self.sections)):
             angle = self.sections[i].currentAngle
             print('Section', i, 'angle', angle)
-            x, y = self.sections[i].drawSection(angle)
-            if i == 1:
-                check = self.checkLine
-                check.clear()
-                check.hideturtle()
-                check.color('purple')
-                check.width(3)
-                check.up()
-                for n in range(len(x)):
-                    check.down()
-                    check.setpos(x[n], y[n])
-                    check.up()
-
-            # self.sections[i].displayCurve()
-            # self.sections[i].drawCircle()
-            # self.sections[i].drawBaseFrame()
+            self.sections[i].drawSection(angle)
             self.sections[i].drawEndFrame()
         print('\n')
         turtle.Screen().update()
         # self.sections[i].render()
 
     def step(self, sectionNum, direction):
+        '''
+        currentAngle of section i is the baseAngle for section i+1
+        Each section has to go through each set of transformations
+        :param sectionNum:
+        :param direction:
+        :return:
+        '''
         # assert sectionNum > len(self.sections), "Section should be within the added sections"
         self.sections[sectionNum - 1].controls[direction]()
+        # Accumulated angle for all the previous angles
+        if len(self.sections) > 1:
+            baseAngle = self.sections[0].getCurrentAngle()
+            i = 1
+            while i < len(self.sections):
+                diff =
+
+
+
+
         newTip = self.sections[sectionNum - 1].getTipPos()
         self.sections[sectionNum].setBaseLocation(newTip[0], newTip[1])
         self.sections[sectionNum].setBaseAngle(self.sections[sectionNum-1].currentAngle)
