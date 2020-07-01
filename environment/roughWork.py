@@ -292,8 +292,6 @@ class section:
         self.circle.circle(radius)
 
 
-
-
 class Robot:
     def __init__(self):
         self.sections = []
