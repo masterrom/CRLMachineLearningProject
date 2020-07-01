@@ -256,7 +256,6 @@ class section:
         # self.tipPos = (x[len(x) - 1] - radius, y[len(y) - 1])
         self.section.home()
 
-
     def getTipPos(self):
         """
         getTipPos return a (x,y) coordinate of where the tip of the section is located
@@ -316,9 +315,6 @@ class section:
         point = [px, py]
 
         return point
-
-        # return (x[len(x) - 1] - radius, y[len(y) - 1])
-
 
 
     def displayCurve(self):
@@ -399,13 +395,9 @@ class Robot:
         newSection = section(100, 20)
         angles = self.getAllCurrentAngles()
         if len(self.sections) >= 1:
-            # newTip = self.sections[-1].getTipPos()
             newTip = self.sections[-1].getTipPos2(angles)
             newSection.setBaseLocation(newTip[0], newTip[1])
             newSection.setBaseAngle(self.sections[-1].currentAngle)
-            # for i in range(len(self.sections)):
-            #     angle = self.sections[i].currentAngle
-            #     newSection.transformations.append(angle)
 
         self.sections.append(newSection)
 
@@ -420,7 +412,6 @@ class Robot:
 
     def step(self, secNum, action):
         secNum -= 1
-
         # # Base Section
         self.sections[secNum].controls[action]()
         angle = self.sections[secNum].currentAngle
@@ -441,11 +432,6 @@ class Robot:
             print("--------- Section " + str(i) + '-----------')
             sec = self.sections[i]
             transformations = angles[:i]
-            # for j in range(i):
-            #     angle = self.sections[j].currentAngle
-            #     if angle != self.zero:
-            #         transformations.append(angle)
-            #
             print('\t transformations:', transformations)
             sec.drawSection2(transformations)
 
