@@ -68,8 +68,9 @@ if __name__ == '__main__':
     while True:
         secNum = int(input("Enter SecNum: "))
         direction = str(input("Enter direction: "))
+        steps = int(input("Enter number of steps: "))
 
-        for i in range(10):
+        for i in range(steps):
             base.robotStep(secNum, direction)
             base.render()
 

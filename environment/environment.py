@@ -16,7 +16,7 @@ class Observation:
     state: Any
     nextState: Any
     reward: float
-    action: float
+    action: tuple
 
 
 def distance(a, b):
@@ -196,8 +196,8 @@ class section:
         allPoints[:,0] = allPoints[:,0] - radius
 
 
-        print("\t First Point", allPoints[0])
-        print("\t Base Location:", self.baseLocation)
+        # print("\t First Point", allPoints[0])
+        # print("\t Base Location:", self.baseLocation)
 
         for i in range(len(transformations)):
             baseAngle = transformations[i]
@@ -213,8 +213,8 @@ class section:
             px = allPoints[n][0]
             py = allPoints[n][1]
 
-            if n == 0 or n == self.sectionLen - 1:
-                print('\tPoint=' + str(n) + ' :', px, py)
+            # if n == 0 or n == self.sectionLen - 1:
+            #     print('\tPoint=' + str(n) + ' :', px, py)
 
             self.section.down()
             self.section.setpos(px, py)
@@ -229,21 +229,22 @@ class section:
         :return: float
         """
         angle = self.currentAngle
+        if angle == 0:  # Use epsilon difference
+            angle = self.zero
 
-        radius = self.sectionLen / self.currentAngle
+        radius = self.sectionLen / angle  # curvature is 0 ==> radius is infinite
 
         t = np.linspace(0, angle, self.sectionLen)
         x = radius * np.cos(t)
         y = radius * np.sin(t)
 
         allPoints = np.vstack((x, y)).T
-        allPoints[:,0] = allPoints[:,0] - radius
+        allPoints[:, 0] = allPoints[:, 0] - radius
 
         for i in range(len(transformations)):
             baseAngle = transformations[i]
             r = np.array(((np.cos(baseAngle), -np.sin(baseAngle)),
                           (np.sin(baseAngle), np.cos(baseAngle))))
-
             allPoints = np.dot(r, allPoints.T).T
 
         allPoints[:, 0] = allPoints[:, 0] + self.baseLocation[0]
@@ -304,6 +305,10 @@ class Robot:
         '''
         self.sections = []
         self.zero = 0.00001
+        self.tipPosition = 0
+        self.controlNum = {
+            'l': 0, 'r': 1, 'e': 2, 'c': 3
+        }
 
     def newSection(self):
         '''
@@ -316,7 +321,6 @@ class Robot:
         if len(self.sections) >= 1:
             newTip = self.sections[-1].getTipPos(angles)
             newSection.setBaseLocation(newTip[0], newTip[1])
-
         self.sections.append(newSection)
 
     def getAllCurrentAngles(self):
@@ -327,10 +331,21 @@ class Robot:
         angles = []
         for i in range(len(self.sections)):
             angle = self.sections[i].currentAngle
-            if angle != self.zero:
-                angles.append(angle)
+            # if angle != self.zero:
+            angles.append(angle)
 
         return angles
+
+    def getAllSectionConfigurations(self):
+        angles = self.getAllCurrentAngles()
+        configs = []
+        for i in range(len(self.sections)):
+            angle = angles[i]
+            secLen = self.sections[i].sectionLen
+            config = (angle, secLen)
+            configs.append(config)
+
+        return configs
 
     def step(self, secNum, action):
         '''
@@ -355,6 +370,13 @@ class Robot:
             tipPos = self.sections[i].getTipPos(angles[:i])
             i += 1
 
+    def endEffectorPos(self):
+        lastSection = self.sections[len(self.sections) - 1]
+        transformations = self.getAllCurrentAngles()
+        tipPos = lastSection.getTipPos(transformations[:len(self.sections) - 1])
+
+        return tipPos
+
     def render(self):
         '''
         render will draw out each section
@@ -362,15 +384,12 @@ class Robot:
         '''
         angles = self.getAllCurrentAngles()
         for i in range(len(self.sections)):
-            print("--------- Section " + str(i) + '-----------')
+            # print("--------- Section " + str(i) + '-----------')
             sec = self.sections[i]
             transformations = angles[:i]
-            print('\t transformations:', transformations)
+            # print('\t transformations:', transformations)
             sec.drawSection(transformations)
             # sec.displayCurve(transformations)
-
-
-# Each sections tip position will be the starting point of the robot
 
 
 class Environment:
@@ -389,6 +408,11 @@ class Environment:
         self.ground.hideturtle()
         self.taskSpace = {'dim': (100, 100),
                           'tool': turtle.Turtle()}
+
+        self.checkTipPoint = turtle.Turtle()
+        self.checkTipPoint.hideturtle()
+
+
         self.taskSpace['tool'].hideturtle()
         self.robot = robot
         self.capPoints = 0
@@ -399,15 +423,19 @@ class Environment:
         self.rewardTool.hideturtle()
         # self.drawReward()
 
-        self.prevState = [0, 0, 0]
+        self.prevState = []
+        self.prevState.extend(robot.getAllSectionConfigurations())
+        self.prevState.append(distance(self.points[0], robot.endEffectorPos()))
+
         # self.prevState = [self.robot.currentAngle,
         #                   self.robot.sectionLen,
         #                   distance(self.robot.getTipPos(),
         #                            (self.points[0][0], self.points[0][1]))]  # Arc Parameters - Distance to Point
         #
+
         self.currentState = self.prevState
 
-        self.observation = Observation(self.prevState, self.prevState, -self.prevState[2], 0)
+        self.observation = Observation(self.prevState, self.prevState, -self.prevState[2], (1,0))
 
     def drawTaskSpace(self):
         """
@@ -494,16 +522,12 @@ class Environment:
 
             # self.robot.drawSection(self.robot.currentAngle)
             # self.robot.displayCurve()
-        # self.wn.tracer(1000)
+
         self.robot.render()
 
         self.drawReward()
         turtle.Screen().update()
-        # self.drawPoint()
-
-        # print(self.robot.getTipPos())
-        # turtle.Screen().getcanvas()
-        # self.wn.mainloop()
+        self.drawPoint()
 
     def pointCapture(self):
         """
@@ -512,20 +536,24 @@ class Environment:
         the points and generate a new random points
         :return: None
         """
-        tipPos = self.robot.getTipPos()
+        tipPos = self.robot.endEffectorPos()
+        self.checkTipPoint.clear()
+        self.checkTipPoint.up()
+
         print("in here")
+        print("tipPos: ", tipPos)
+        self.checkTipPoint.setpos(tipPos[0], tipPos[1])
+        self.checkTipPoint.dot(3,'blue')
         pCap = None
         for i in range(len(self.points)):
             # Get Distance
 
             pos = self.points[i]
 
-            a = pos[0] - tipPos[0]
-            b = pos[1] - tipPos[1]
+            c = distance(pos, tipPos)
 
-            c = math.sqrt(a ** 2 + b ** 2)
-
-            if c <= 0.5:
+            print("C Val: ", c)
+            if c <= 2:
                 self.capPoints += 1
                 pCap = i
                 print("Captured Point: Points ", self.capPoints)
@@ -547,7 +575,16 @@ class Environment:
         robot maxSection - minSection and maxCurvature - minCurvature
         :return: (x, y)
         """
-        return [0, 0]
+        maxHeight = len(self.robot.sections) * 100
+        maxWidth = 100
+
+        x = random.uniform(-maxWidth, maxWidth)
+        y = random.uniform(10, maxHeight)
+        point = [x,y]
+        self.points.append(point)
+
+
+        return [x, y]
         # angle = random.uniform(-2 * math.pi, 2 * math.pi)
         # maxArcLen = self.robot.maxSectionLen
         # minArcLen = self.robot.minSectionLen
@@ -586,29 +623,31 @@ class Environment:
         :return: Observation
         """
 
-        self.robot.step(sec, direction)
+        # self.robot.step(sec, direction)
 
-        '''
+
         robot = self.robot
         # Save previous state
         self.prevState = self.currentState
 
         # Step
-        robot.controls[direction]()
-        self.currentState = [robot.currentAngle,
-                             robot.sectionLen,
-                             distance(robot.getTipPos(), (self.points[0][0], self.points[0][1])), ]
-        reward = -self.currentState[2]
+        self.robot.step(sec, direction)
+        self.currentState = []
+        self.currentState.extend(robot.getAllSectionConfigurations())
+        self.currentState.append(distance(self.points[0], robot.endEffectorPos()))
+
+
+        reward = -self.currentState[-1]
 
         # Determine if a point was captured
         capPoint = self.pointCapture()
         if capPoint:
             reward += 100
 
-        self.observation = Observation(self.prevState, self.currentState, reward, self.robot.controlNum[direction])
+        self.observation = Observation(self.prevState, self.currentState, reward, (sec, self.robot.controlNum[direction]))
         print(self.observation)
         return self.observation
-        '''
+
 
     def randomAction(self):
         """
