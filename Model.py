@@ -4,11 +4,13 @@ from collections import deque
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.functional as F
+import torch.nn.functional as F
 import torch.optim as optim
 from random import random, sample
 from environment.environment import section, Environment, Observation, Robot
 import turtle
+
+
 
 
 class ReplayBuffer:
@@ -25,12 +27,6 @@ class ReplayBuffer:
         assert numSample <= len(self.buffer)
         return sample(self.buffer, numSample)
 
-
-# Copying over the weights from m to tgt
-def updateTGTModel(m, tgt):
-    tgt.load_state_dict(m.state_dict())
-
-
 class Model(nn.Module):
     def __init__(self, observationShape, numActions):
         super(Model, self).__init__()
@@ -40,47 +36,96 @@ class Model(nn.Module):
         self.net = nn.Sequential(
             nn.Linear(observationShape, 256),
             nn.ReLU(),
-            nn.Linear(256, numActions)
+            nn.Linear(256, numActions),
+            nn.ReLU()
         )
+
+        self.opt = optim.Adam(self.net.parameters(),lr=0.0001,)
 
     def forward(self, x):
         return self.net(x)
 
 
-# def trainStep(stateTransitions, model, targetModel)
+def trainStep(stateTransitions, model, targetModel, numActions):
+    currentState = torch.stack([torch.Tensor(s.state) for s in stateTransitions])
+    rewards = torch.stack([torch.Tensor([s.reward]) for s in stateTransitions])
+    nextState = torch.stack([torch.Tensor(s.nextState) for s in stateTransitions])
+    mask = torch.stack([torch.Tensor([0]) if s.done else torch.Tensor([1]) for s in stateTransitions])
+    actions = [s.action for s in stateTransitions]
+
+    with torch.no_grad():
+        qValNext = targetModel(nextState).max(-1)[0] # should output (N, numActions)
+
+    model.opt.zero_grad()
+    qVal = model(currentState)
+    oneHotActions = F.one_hot(torch.LongTensor(actions), numActions)
+
+    loss = ((rewards + mask[:, 0] * qValNext - torch.sum(qVal * oneHotActions, -1)) ** 2).mean()
+    loss.backward()
+    model.opt.step()
+
+    return loss
+
+# Copying over the weights from m to tgt
+def updateTGTModel(m, tgt):
+    tgt.load_state_dict(m.state_dict())
 
 
 if __name__ == '__main__':
-
-    arcLength = 100
 
     robot = Robot()
     robot.newSection()
     robot.newSection()
 
-    base = Environment(robot)
-    base.render()
+    env = Environment(robot)
+    obs = env.getObservation()
 
-    turtle.Screen().update()
+    # env.render()
+    # turtle.Screen().update()
+    rb = ReplayBuffer()
 
-    robot.sections[-1].section.color('black')
 
+    model = Model(len(obs.state), len(env.robot.actions))
+    targetModel = Model(len(obs.state), len(env.robot.actions))
+
+    # Copying over the weights
+    updateTGTModel(model, targetModel)
+
+
+
+    while True:
+        action = env.robot.randomAction()
+        obs  = env.robotStep(action[0], action[1])
+        # print(obs)
+        # env.render()
+        x = model(torch.Tensor(obs.state))
+        # print(x)
+        rb.insert(obs)
+        if len(rb.buffer) >= 1000:
+            loss = trainStep(rb.sample(250),model, targetModel, len(env.robot.actions))
+            print(loss)
+            import ipdb; ipdb.set_trace()
+
+
+        if env.done():
+            env.reset()
+
+    # model = Model()
+
+    # NOTE:Demo
+    '''
     while True:
         secNum = int(input("Enter SecNum: "))
         direction = str(input("Enter direction: "))
         steps = int(input("Enter number of steps: "))
 
         for i in range(steps):
-            base.robotStep(secNum, direction)
-            base.render()
+            env.robotStep(secNum, direction)
+            env.render()
+    '''
 
 
-    # commands = ['l','r','e','c']
-    # while True:
-    #     direction = int(input("Enter direction: "))
-    #     numSteps = int(input("Enter steps in direction " + commands[direction]))
-    #     for j in range(numSteps):
-    #         base.robotStep(commands[direction])
-    #         # base.render()
-    #         print(base.robot.getTipPos())
+
+
+
 

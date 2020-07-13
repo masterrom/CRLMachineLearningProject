@@ -16,7 +16,8 @@ class Observation:
     state: Any
     nextState: Any
     reward: float
-    action: tuple
+    action: float
+    done: bool
 
 
 def distance(a, b):
@@ -24,6 +25,10 @@ def distance(a, b):
     y = a[1] - b[1]
     return math.sqrt(x ** 2 + y ** 2)
 
+def random_color():
+    rgbl=[255,0,0]
+    random.shuffle(rgbl)
+    return (rgbl)
 
 class section:
 
@@ -41,6 +46,7 @@ class section:
         # Set of baseLocations and Angles
 
         self.section = turtle.Turtle()
+        self.section.width(2)
         self.section.color('red')
 
         self.render = False
@@ -309,6 +315,9 @@ class Robot:
         self.controlNum = {
             'l': 0, 'r': 1, 'e': 2, 'c': 3
         }
+        self.controls = ['l','r','e','c']
+        self.actions = []
+        self.eRender = False
 
     def newSection(self):
         '''
@@ -321,7 +330,14 @@ class Robot:
         if len(self.sections) >= 1:
             newTip = self.sections[-1].getTipPos(angles)
             newSection.setBaseLocation(newTip[0], newTip[1])
+
+        if self.eRender:
+            turtle.Screen().colormode(255)
+            color = tuple(np.random.choice(range(255), size=3))
+            newSection.section.color(color[0], color[1], color[2])
+
         self.sections.append(newSection)
+        self.genActionSet()
 
     def getAllCurrentAngles(self):
         '''
@@ -343,7 +359,7 @@ class Robot:
             angle = angles[i]
             secLen = self.sections[i].sectionLen
             config = (angle, secLen)
-            configs.append(config)
+            configs.extend(config)
 
         return configs
 
@@ -377,6 +393,16 @@ class Robot:
 
         return tipPos
 
+    def randomAction(self):
+        action = randint(0, len(self.actions))
+        return self.actions[action]
+
+    def reset(self):
+        currentSecs = len(self.sections)
+        self.sections = []
+        for i in range(currentSecs):
+            self.newSection()
+
     def render(self):
         '''
         render will draw out each section
@@ -391,6 +417,13 @@ class Robot:
             sec.drawSection(transformations)
             # sec.displayCurve(transformations)
 
+    def genActionSet(self):
+        actions = []
+        for i in range(len(self.sections)):
+            for j in range(len(self.controls)):
+                a = (i+1, self.controls[j])
+                actions.append(a)
+        self.actions = actions
 
 class Environment:
 
@@ -412,6 +445,7 @@ class Environment:
         self.checkTipPoint = turtle.Turtle()
         self.checkTipPoint.hideturtle()
 
+        self.end = False
 
         self.taskSpace['tool'].hideturtle()
         self.robot = robot
@@ -421,21 +455,15 @@ class Environment:
 
         self.rewardTool = turtle.Turtle()
         self.rewardTool.hideturtle()
-        # self.drawReward()
+         # self.drawReward()
 
         self.prevState = []
         self.prevState.extend(robot.getAllSectionConfigurations())
         self.prevState.append(distance(self.points[0], robot.endEffectorPos()))
 
-        # self.prevState = [self.robot.currentAngle,
-        #                   self.robot.sectionLen,
-        #                   distance(self.robot.getTipPos(),
-        #                            (self.points[0][0], self.points[0][1]))]  # Arc Parameters - Distance to Point
-        #
-
         self.currentState = self.prevState
 
-        self.observation = Observation(self.prevState, self.prevState, -self.prevState[2], (1,0))
+        self.observation = Observation(self.prevState, self.prevState, -self.prevState[2], 1, self.end)
 
     def drawTaskSpace(self):
         """
@@ -514,9 +542,11 @@ class Environment:
 
     def render(self):
         if self.wn is None:
+            turtle.setup(800, 600)
             self.wn = turtle.Screen()
             # self.wn.delay(0)
             # self.wn.tracer(600)
+            self.robot.eRender = True
             self.drawGround()
             # self.robot.setRender(True)
 
@@ -537,13 +567,12 @@ class Environment:
         :return: None
         """
         tipPos = self.robot.endEffectorPos()
-        self.checkTipPoint.clear()
-        self.checkTipPoint.up()
-
-        print("in here")
-        print("tipPos: ", tipPos)
-        self.checkTipPoint.setpos(tipPos[0], tipPos[1])
-        self.checkTipPoint.dot(3,'blue')
+        # self.checkTipPoint.clear()
+        # self.checkTipPoint.up()
+        #
+        # # print("tipPos: ", tipPos)
+        # self.checkTipPoint.setpos(tipPos[0], tipPos[1])
+        # self.checkTipPoint.dot(3,'blue')
         pCap = None
         for i in range(len(self.points)):
             # Get Distance
@@ -552,7 +581,7 @@ class Environment:
 
             c = distance(pos, tipPos)
 
-            print("C Val: ", c)
+            # print("C Val: ", c)
             if c <= 2:
                 self.capPoints += 1
                 pCap = i
@@ -567,7 +596,7 @@ class Environment:
 
     def getObservation(self):
         # Current State, reward
-        return
+        return self.observation
 
     def generatePoint(self):
         """
@@ -616,6 +645,23 @@ class Environment:
         point.dot(4)
         point.up()
 
+    def done(self):
+        return self.end
+
+    def reset(self):
+        self.end = False
+        self.capPoints = 0
+        self.robot.reset()
+
+        self.points = []
+        self.generatePoint()
+
+        self.prevState = []
+        self.prevState.extend(self.robot.getAllSectionConfigurations())
+        self.prevState.append(distance(self.points[0], self.robot.endEffectorPos()))
+
+        self.currentState = self.prevState
+
     def robotStep(self, sec, direction):
         """
         robotStep will take a step towards the specified direction
@@ -643,17 +689,12 @@ class Environment:
         capPoint = self.pointCapture()
         if capPoint:
             reward += 100
+            self.end = True
 
-        self.observation = Observation(self.prevState, self.currentState, reward, (sec, self.robot.controlNum[direction]))
-        print(self.observation)
+        self.observation = Observation(self.prevState,
+                                       self.currentState,
+                                       reward,
+                                       self.robot.actions.index((sec, direction)),
+                                       self.end)
+        # print(self.observation)
         return self.observation
-
-
-    def randomAction(self):
-        """
-        randomAction will generate a random action
-        :return: int
-        """
-        # TODO add in random seed
-        action = randint(0, 3)
-        return action
