@@ -437,7 +437,6 @@ class Environment:
         without hitting any obstacles in between
         :param robot: Section
         """
-        turtle.setup(800, 600)
         self.wn = None
         self.ground = turtle.Turtle()
         self.ground.hideturtle()
