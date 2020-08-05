@@ -10,6 +10,7 @@ import numpy as np
 from numpy.random import randint, seed
 import ipdb
 
+colors = ['Red', 'Black', 'Orange', 'Pink', 'Green', 'Brown', 'Purple']
 
 @dataclass
 class Observation:
@@ -45,18 +46,21 @@ class section:
         self.transformations = []
         # Set of baseLocations and Angles
 
-        self.section = turtle.Turtle()
-        self.section.width(2)
-        self.section.color('red')
+        # self.section = turtle.Turtle()
+        # self.section.width(2)
+        # self.section.color('red')
+        self.section = None
 
         self.render = False
 
-        self.baseFrame = turtle.Turtle()
-        self.endFrame = turtle.Turtle()
+        # self.baseFrame = turtle.Turtle()
+        # self.endFrame = turtle.Turtle()
+        self.baseFrame = self.endFrame = None
 
-        self.curve = turtle.Turtle()
-        self.curve.color('green')
-        self.curve.hideturtle()
+        self.curve = None
+        # self.curve = turtle.Turtle()
+        # self.curve.color('green')
+        # self.curve.hideturtle()
 
         self.sectionLen = sectionLen
         self.minSectionLen = sectionLen
@@ -333,10 +337,10 @@ class Robot:
             newTip = self.sections[-1].getTipPos(angles)
             newSection.setBaseLocation(newTip[0], newTip[1])
 
-        if self.eRender:
-            turtle.Screen().colormode(255)
-            color = tuple(np.random.choice(range(255), size=3))
-            newSection.section.color(color[0], color[1], color[2])
+        # if self.eRender:
+        #     turtle.Screen().colormode(255)
+        #     color = tuple(np.random.choice(range(255), size=3))
+        #     newSection.section.color(color[0], color[1], color[2])
 
         self.sections.append(newSection)
         self.genActionSet()
@@ -419,6 +423,26 @@ class Robot:
             sec.drawSection(transformations)
             # sec.displayCurve(transformations)
 
+    def buildRenderComponents(self):
+
+        for i in range(len(self.sections)):
+            sec = self.sections[i]
+            sec.section = turtle.Turtle()
+            sec.section.width(2)
+            sec.section.hideturtle()
+            # color = tuple(np.random.choice(range(255), size=3))
+            color = colors[random.randint(0, len(colors)-1)]
+            # sec.section.color(color[0], color[1], color[2])
+            sec.section.color(color)
+
+            sec.baseFrame = turtle.Turtle()
+            sec.endFrame = turtle.Turtle()
+
+
+            sec.curve = turtle.Turtle()
+            sec.curve.color('green')
+            sec.curve.hideturtle()
+
     def genActionSet(self):
         actions = []
         for i in range(len(self.sections)):
@@ -438,24 +462,26 @@ class Environment:
         :param robot: Section
         """
         self.wn = None
-        self.ground = turtle.Turtle()
-        self.ground.hideturtle()
-        self.taskSpace = {'dim': (100, 100),
-                          'tool': turtle.Turtle()}
-
-        self.checkTipPoint = turtle.Turtle()
-        self.checkTipPoint.hideturtle()
+        # self.ground = turtle.Turtle()
+        # self.ground.hideturtle()
+        # self.taskSpace = {'dim': (100, 100),
+        #                   'tool': turtle.Turtle()}
+        # self.taskSpace['tool'].hideturtle()
+        #
+        # self.checkTipPoint = turtle.Turtle()
+        # self.checkTipPoint.hideturtle()
+        self.ground = self.taskSpace = self.checkTipPoint = None
 
         self.end = False
 
-        self.taskSpace['tool'].hideturtle()
         self.robot = robot
         self.capPoints = 0
         self.points = []
         self.generatePoint()
 
-        self.rewardTool = turtle.Turtle()
-        self.rewardTool.hideturtle()
+        # self.rewardTool = turtle.Turtle()
+        # self.rewardTool.hideturtle()
+        self.rewardTool = None
          # self.drawReward()
 
         self.prevState = []
@@ -543,6 +569,21 @@ class Environment:
         self.rewardTool.down()
         self.rewardTool.write("Points: " + str(self.capPoints), align='center')
 
+    def buildRenderComponents(self):
+        self.ground = turtle.Turtle()
+        self.ground.hideturtle()
+
+        self.taskSpace = {'dim': (100, 100),
+                          'tool': turtle.Turtle()}
+        self.taskSpace['tool'].hideturtle()
+
+
+        self.checkTipPoint = turtle.Turtle()
+        self.checkTipPoint.hideturtle()
+
+        self.rewardTool = turtle.Turtle()
+        self.rewardTool.hideturtle()
+
     def render(self):
         if self.wn is None:
             turtle.setup(800, 1000)
@@ -550,6 +591,9 @@ class Environment:
             # self.wn.delay(0)
             # self.wn.tracer(600)
             self.robot.eRender = True
+            self.robot.buildRenderComponents()
+            self.buildRenderComponents()
+
             self.drawGround()
             # self.robot.setRender(True)
 

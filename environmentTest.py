@@ -18,5 +18,6 @@ if __name__ == '__main__':
         steps = int(input("Enter number of steps: "))
 
         for i in range(steps):
-            env.robotStep(secNum, direction)
+            obs = env.robotStep(secNum, direction)
+            # print(obs)
             env.render()
