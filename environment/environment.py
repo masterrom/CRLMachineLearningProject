@@ -333,10 +333,10 @@ class Robot:
             newTip = self.sections[-1].getTipPos(angles)
             newSection.setBaseLocation(newTip[0], newTip[1])
 
-
-        turtle.Screen().colormode(255)
-        color = tuple(np.random.choice(range(255), size=3))
-        newSection.section.color(color[0], color[1], color[2])
+        if self.eRender:
+            turtle.Screen().colormode(255)
+            color = tuple(np.random.choice(range(255), size=3))
+            newSection.section.color(color[0], color[1], color[2])
 
         self.sections.append(newSection)
         self.genActionSet()
