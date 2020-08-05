@@ -56,16 +56,14 @@ class section:
 
         self.curve = turtle.Turtle()
         self.curve.color('green')
-
-        self.circle = turtle.Turtle()
-        self.circle.color('pink')
+        self.curve.hideturtle()
 
         self.sectionLen = sectionLen
         self.minSectionLen = sectionLen
-        self.maxSectionLen = maxSectionLen
+        self.maxSectionLen = sectionLen +  maxSectionLen
 
         self.zero = 0.00001
-        self.leftLimit = 1.9 * math.pi
+        self.leftLimit = 1.8 * math.pi
         self.currentAngle = self.zero
         self.tipPos = (0, 0)
 
@@ -112,7 +110,7 @@ class section:
             self.currentAngle = 0
 
         self.currentAngle += 0.01
-        if self.currentAngle == self.leftLimit:
+        if self.currentAngle >= self.leftLimit:
             self.currentAngle -= 0.01
             print("Left angle limit reached", self.currentAngle)
             return
@@ -132,7 +130,7 @@ class section:
             self.currentAngle = 0
 
         self.currentAngle -= 0.01
-        if self.currentAngle == -self.leftLimit:
+        if self.currentAngle <= -self.leftLimit:
             self.currentAngle += 0.01
             print("Right angle limit reached", self.currentAngle)
             return
@@ -146,12 +144,12 @@ class section:
         constant
         :return: None
         """
+
         if self.sectionLen == self.maxSectionLen:
             assert "Section max length has reached"
             return
         else:
             self.sectionLen += 1
-
         if self.render:
             self.drawSection(self.currentAngle)
             self.displayCurve()
@@ -214,7 +212,7 @@ class section:
         allPoints[:,0] = allPoints[:,0] + self.baseLocation[0]
         allPoints[:, 1] = allPoints[:, 1] + self.baseLocation[1]
 
-
+        disk = 1
         for n in range(self.sectionLen):
             px = allPoints[n][0]
             py = allPoints[n][1]
@@ -224,6 +222,10 @@ class section:
 
             self.section.down()
             self.section.setpos(px, py)
+            if disk % 10 == 0:
+               self.section.dot(2)
+
+            disk = disk % 10 + 1
             self.section.up()
 
         # self.tipPos = (x[len(x) - 1] - radius, y[len(y) - 1])
@@ -331,10 +333,10 @@ class Robot:
             newTip = self.sections[-1].getTipPos(angles)
             newSection.setBaseLocation(newTip[0], newTip[1])
 
-        if self.eRender:
-            turtle.Screen().colormode(255)
-            color = tuple(np.random.choice(range(255), size=3))
-            newSection.section.color(color[0], color[1], color[2])
+
+        turtle.Screen().colormode(255)
+        color = tuple(np.random.choice(range(255), size=3))
+        newSection.section.color(color[0], color[1], color[2])
 
         self.sections.append(newSection)
         self.genActionSet()
@@ -459,11 +461,13 @@ class Environment:
 
         self.prevState = []
         self.prevState.extend(robot.getAllSectionConfigurations())
-        self.prevState.append(distance(self.points[0], robot.endEffectorPos()))
+        self.prevState.extend(self.points[0])
+        # self.prevState.append(distance(self.points[0], robot.endEffectorPos()))
 
         self.currentState = self.prevState
+        dist = distance(self.points[0], robot.endEffectorPos())
 
-        self.observation = Observation(self.prevState, self.prevState, -self.prevState[2], 1, self.end)
+        self.observation = Observation(self.prevState, self.prevState, -dist, 1, self.end)
 
     def drawTaskSpace(self):
         """
@@ -542,7 +546,7 @@ class Environment:
 
     def render(self):
         if self.wn is None:
-            turtle.setup(800, 600)
+            turtle.setup(800, 1000)
             self.wn = turtle.Screen()
             # self.wn.delay(0)
             # self.wn.tracer(600)
@@ -629,6 +633,10 @@ class Environment:
         # point = [x[arcLen - 1] - radius, y[arcLen - 1]]
         # self.points.append(point)
 
+    def staticPoint(self, point):
+        self.points = []
+        self.points.append(point)
+
     def drawPoint(self):
         """
         drawPoint generates a random point, draws a point on board
@@ -658,7 +666,8 @@ class Environment:
 
         self.prevState = []
         self.prevState.extend(self.robot.getAllSectionConfigurations())
-        self.prevState.append(distance(self.points[0], self.robot.endEffectorPos()))
+        self.prevState.extend(self.points[0])
+        # self.prevState.append(distance(self.points[0], self.robot.endEffectorPos()))
 
         self.currentState = self.prevState
 
@@ -680,10 +689,12 @@ class Environment:
         self.robot.step(sec, direction)
         self.currentState = []
         self.currentState.extend(robot.getAllSectionConfigurations())
-        self.currentState.append(distance(self.points[0], robot.endEffectorPos()))
+        self.currentState.extend(self.points[0])
+
+        dist = distance(self.points[0], robot.endEffectorPos())
 
 
-        reward = -self.currentState[-1]
+        reward = -dist
 
         # Determine if a point was captured
         capPoint = self.pointCapture()
