@@ -205,8 +205,8 @@ def main(test=False, chkpt=None):
     '''
 
 if __name__ == '__main__':
-    main(True, "Models/2623071.pth")
-    # main()
+    # main(True, "Models/2623071.pth")
+    main()
 
 
 
