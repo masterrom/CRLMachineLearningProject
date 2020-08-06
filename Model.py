@@ -98,14 +98,14 @@ def main(test=False, chkpt=None, device='cuda'):
 
     robot = Robot()
     robot.newSection()
-    robot.newSection()
+    # robot.newSection()
 
     env = Environment(robot)
     if test:
-        env.staticPoint([-75, 150])
+        env.staticPoint([-9.966711079379195, 99.3346653975306])
         env.render()
     else:
-        env.staticPoint([-75, 150])
+        env.staticPoint([-9.966711079379195, 99.3346653975306])
 
     lastObs = env.getObservation()
 
@@ -177,6 +177,7 @@ def main(test=False, chkpt=None, device='cuda'):
         #     # env.reset()
         if env.done():
             env.reset()
+            env.staticPoint([-9.966711079379195, 99.3346653975306])
 
         obs.reward = obs.reward / 100
 
@@ -306,7 +307,7 @@ def modelTest(test=False, chkpt=None, device='cuda'):
 
 
 if __name__ == '__main__':
-    # modelTest(True, "Models/7944256.pth")
+    # modelTest(True, "Models/1214323.pth")
     main()
 
 

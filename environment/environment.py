@@ -755,7 +755,7 @@ class Environment:
             reward += 200
             self.end = True
 
-        reward = reward * (-1)
+        # reward = reward * (-1)
 
         self.observation = Observation(self.prevState,
                                        self.currentState,

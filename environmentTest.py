@@ -4,10 +4,10 @@ if __name__ == '__main__':
 
     robot = Robot()
     robot.newSection()
-    robot.newSection()
+    # robot.newSection()
 
     env = Environment(robot)
-    env.staticPoint([-75, 150])
+    env.staticPoint([-9.966711079379195, 99.3346653975306])
 
     env.render()
 
@@ -19,5 +19,6 @@ if __name__ == '__main__':
 
         for i in range(steps):
             obs = env.robotStep(secNum, direction)
+            print(env.robot.endEffectorPos())
             print(obs)
             env.render()
