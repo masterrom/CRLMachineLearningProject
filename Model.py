@@ -79,7 +79,7 @@ def updateTGTModel(m, tgt):
     tgt.load_state_dict(m.state_dict())
 
 
-def main(test=False, chkpt=None, device='cuda'):
+def main(test=False, chkpt=None, device='cuda:5'):
 
     if not test:
         wandb.init(project="MultiSection Continum", name="Reaching Task 32 Per Layer")
@@ -166,7 +166,7 @@ def main(test=False, chkpt=None, device='cuda'):
         stepSinceTrain += 1
         stepNum += 1
         rb.insert(obs)
-        if (not test) and len(rb.buffer) >= minRBSize asnd stepSinceTrain > envStepsBeforeTrain:
+        if (not test) and len(rb.buffer) >= minRBSize and stepSinceTrain > envStepsBeforeTrain:
             stepSinceTGTUpdate += 1
             loss = trainStep(rb.sample(sampleSize),model, targetModel, len(env.robot.actions), device)
             wandb.log({"Loss": loss.detach().cpu().item(), "eps": eps, "Step Rewards:": np.mean(episodeRewards)}, step=stepNum)
