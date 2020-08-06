@@ -49,10 +49,10 @@ class Model(nn.Module):
         return self.net(x)
 
 
-def trainStep(stateTransitions, model, targetModel, numActions):
-    currentState = torch.stack([torch.Tensor(s.state) for s in stateTransitions])
-    rewards = torch.stack([torch.Tensor([s.reward]) for s in stateTransitions])
-    nextState = torch.stack([torch.Tensor(s.nextState) for s in stateTransitions])
+def trainStep(stateTransitions, model, targetModel, numActions, device):
+    currentState = torch.stack([torch.Tensor(s.state) for s in stateTransitions]).to(device)
+    rewards = torch.stack([torch.Tensor([s.reward]) for s in stateTransitions]).to(device)
+    nextState = torch.stack([torch.Tensor(s.nextState) for s in stateTransitions]).to(device)
     # mask = torch.stack([torch.Tensor([0]) if s.done else torch.Tensor([1]) for s in stateTransitions])
     actions = [s.action for s in stateTransitions]
 
@@ -61,7 +61,7 @@ def trainStep(stateTransitions, model, targetModel, numActions):
 
     model.opt.zero_grad()
     qVal = model(currentState)
-    oneHotActions = F.one_hot(torch.LongTensor(actions), numActions)
+    oneHotActions = F.one_hot(torch.LongTensor(actions), numActions).to(device)
     gamma = 0.01
 
     loss = ((rewards + gamma * qValNext - torch.sum(qVal * oneHotActions, -1)) ** 2).mean()
@@ -79,7 +79,7 @@ def updateTGTModel(m, tgt):
     tgt.load_state_dict(m.state_dict())
 
 
-def main(test=False, chkpt=None):
+def main(test=False, chkpt=None, device='cuda'):
 
     if not test:
         wandb.init(project="MultiSection Continum", name="Reaching Task 32 Per Layer")
@@ -109,11 +109,11 @@ def main(test=False, chkpt=None):
     epsDecay = 0.99998
 
 
-    model = Model(len(lastObs.state), len(env.robot.actions))
+    model = Model(len(lastObs.state), len(env.robot.actions)).to(device)
     if chkpt != None:
         model.load_state_dict(torch.load(chkpt))
 
-    targetModel = Model(len(lastObs.state), len(env.robot.actions))
+    targetModel = Model(len(lastObs.state), len(env.robot.actions)).to(device)
     updateTGTModel(model, targetModel)
 
     stepSinceTrain = 0
@@ -139,7 +139,7 @@ def main(test=False, chkpt=None):
         if random() < eps:
             action = env.robot.randomAction()
         else:
-            actNum = model(torch.tensor(lastObs.state)).max(-1)[-1].item()
+            actNum = model(torch.tensor(lastObs.state).to(device)).max(-1)[-1].item()
             action = env.robot.actions[actNum]
 
         obs  = env.robotStep(action[0], action[1])
@@ -166,10 +166,10 @@ def main(test=False, chkpt=None):
         stepSinceTrain += 1
         stepNum += 1
         rb.insert(obs)
-        if (not test) and len(rb.buffer) >= minRBSize and stepSinceTrain > envStepsBeforeTrain:
+        if (not test) and len(rb.buffer) >= minRBSize asnd stepSinceTrain > envStepsBeforeTrain:
             stepSinceTGTUpdate += 1
-            loss = trainStep(rb.sample(sampleSize),model, targetModel, len(env.robot.actions))
-            wandb.log({"Loss": loss.detach().item(), "eps": eps, "Step Rewards:": np.mean(episodeRewards)}, step=stepNum)
+            loss = trainStep(rb.sample(sampleSize),model, targetModel, len(env.robot.actions), device)
+            wandb.log({"Loss": loss.detach().cpu().item(), "eps": eps, "Step Rewards:": np.mean(episodeRewards)}, step=stepNum)
             stepSinceTrain = 0
 
             if stepSinceTGTUpdate > targetModelUpdate:
