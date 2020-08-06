@@ -306,8 +306,8 @@ def modelTest(test=False, chkpt=None, device='cuda'):
 
 
 if __name__ == '__main__':
-    modelTest(True, "Models/7944256.pth")
-    # main()
+    # modelTest(True, "Models/7944256.pth")
+    main()
 
 
 
