@@ -117,10 +117,12 @@ class section:
         if self.currentAngle >= self.leftLimit:
             self.currentAngle -= 0.01
             print("Left angle limit reached", self.currentAngle)
-            return
+            return False
 
         if self.render:
             self.drawSection(self.currentAngle)
+
+        return True
 
     def stepRight(self):
         """
@@ -137,9 +139,11 @@ class section:
         if self.currentAngle <= -self.leftLimit:
             self.currentAngle += 0.01
             print("Right angle limit reached", self.currentAngle)
-            return
+            return False
         if self.render:
             self.drawSection(self.currentAngle)
+
+        return True
 
     def extendArm(self):
         """
@@ -151,13 +155,13 @@ class section:
 
         if self.sectionLen == self.maxSectionLen:
             assert "Section max length has reached"
-            return
+            return True
         else:
             self.sectionLen += 1
         if self.render:
             self.drawSection(self.currentAngle)
             self.displayCurve()
-        return
+        return True
 
     def contractArm(self):
         """
@@ -168,7 +172,7 @@ class section:
         """
         if self.sectionLen == self.minSectionLen:
             assert "Section min length has reached"
-            return
+            return True
         else:
             self.sectionLen -= 1
 
@@ -176,7 +180,7 @@ class section:
             self.drawSection(self.currentAngle)
             self.displayCurve()
 
-        return
+        return True
 
     def drawSection(self, transformations):
         """
@@ -379,7 +383,7 @@ class Robot:
         secNum -= 1
         # # Base Section
 
-        self.sections[secNum].controls[action]()
+        stepLimitReached = self.sections[secNum].controls[action]()
 
         angles = self.getAllCurrentAngles()
 
@@ -391,6 +395,8 @@ class Robot:
 
             tipPos = self.sections[i].getTipPos(angles[:i])
             i += 1
+
+        return stepLimitReached
 
     def endEffectorPos(self):
         lastSection = self.sections[len(self.sections) - 1]
@@ -729,7 +735,7 @@ class Environment:
         self.prevState = self.currentState
 
         # Step
-        self.robot.step(sec, direction)
+        limit = self.robot.step(sec, direction)
         self.currentState = []
         self.currentState.extend(robot.getAllSectionConfigurations())
         self.currentState.extend(self.points[0])
@@ -739,10 +745,13 @@ class Environment:
 
         reward = -dist
 
+        if not limit:
+            reward -= 50
+
         # Determine if a point was captured
         capPoint = self.pointCapture()
         if capPoint:
-            reward += 100
+            reward += 200
             self.end = True
 
         self.observation = Observation(self.prevState,

@@ -20,15 +20,27 @@ class ReplayBuffer:
 
     def __init__(self, bufferSize=100000):
         self.bufferSize = bufferSize
-        self.buffer = deque(maxlen=bufferSize)
+        self.buffer = [None]*bufferSize
+        self.index = 0
+        # self.buffer = deque(maxlen=bufferSize)
 
     def insert(self, obs):
-        self.buffer.append(obs)
-        # self.buffer = self.buffer[-self.bufferSize:]
+        # self.buffer.append(obs)
+        self.buffer[self.index % self.bufferSize] = obs
+        self.index += 1
+        # self.bufsfer = self.buffer[-self.bufferSize:]
 
     def sample(self, numSample):
-        assert numSample <= len(self.buffer)
+        # assert numSample <= len(self.buffer)
+        assert numSample < min(self.index, self.bufferSize)
+        # if numSample > min(self.index, self.bufferSize)
+
+        if self.index < self.bufferSize:
+            return sample(self.buffer[:self.index], numSample)
         return sample(self.buffer, numSample)
+
+
+
 
 class Model(nn.Module):
     def __init__(self, observationShape, numActions):
@@ -80,7 +92,7 @@ def updateTGTModel(m, tgt):
 
 
 def main(test=False, chkpt=None, device='cuda'):
-
+    # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     if not test:
         wandb.init(project="MultiSection Continum", name="Reaching Task 32 Per Layer")
 
@@ -100,13 +112,15 @@ def main(test=False, chkpt=None, device='cuda'):
 
     rb = ReplayBuffer()
 
-    minRBSize = 10000
-    sampleSize = 2500
+    memorySize = 500000
+    minRBSize = 20000
+    sampleSize = 750
+
     envStepsBeforeTrain = 100
-    targetModelUpdate = 150
+    targetModelUpdate = 500
 
     epsMin = 0.01
-    epsDecay = 0.99998
+    epsDecay = 0.99999
 
 
     model = Model(len(lastObs.state), len(env.robot.actions)).to(device)
@@ -160,13 +174,15 @@ def main(test=False, chkpt=None, device='cuda'):
         #     print(episodeRewards)
         #     rollingReward = 0
         #     # env.reset()
+        if env.done():
+            env.reset()
 
         obs.reward = obs.reward / 100
 
         stepSinceTrain += 1
         stepNum += 1
         rb.insert(obs)
-        if (not test) and len(rb.buffer) >= minRBSize and stepSinceTrain > envStepsBeforeTrain:
+        if (not test) and rb.index >= minRBSize and stepSinceTrain > envStepsBeforeTrain:
             stepSinceTGTUpdate += 1
             loss = trainStep(rb.sample(sampleSize),model, targetModel, len(env.robot.actions), device)
             wandb.log({"Loss": loss.detach().cpu().item(), "eps": eps, "Step Rewards:": np.mean(episodeRewards)}, step=stepNum)
@@ -183,9 +199,113 @@ def main(test=False, chkpt=None, device='cuda'):
             # import ipdb; ipdb.set_trace()
 
 
+def modelTest(test=False, chkpt=None, device='cuda'):
+    # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    if not test:
+        wandb.init(project="MultiSection Continum", name="Reaching Task 32 Per Layer")
+
+    robot = Robot()
+    robot.newSection()
+    robot.newSection()
+
+    env = Environment(robot)
+    if test:
+        env.staticPoint([-75, 150])
+        env.render()
+    else:
+        env.staticPoint([-75, 150])
+
+    lastObs = env.getObservation()
+
+
+    rb = ReplayBuffer()
+
+    minRBSize = 10000
+    sampleSize = 2500
+    envStepsBeforeTrain = 100
+    targetModelUpdate = 150
+
+    epsMin = 0.01
+    epsDecay = 0.99998
+
+
+    model = Model(len(lastObs.state), len(env.robot.actions))
+    if chkpt != None:
+        model.load_state_dict(torch.load(chkpt, map_location=torch.device('cpu')))
+
+    targetModel = Model(len(lastObs.state), len(env.robot.actions))
+    updateTGTModel(model, targetModel)
+
+    stepSinceTrain = 0
+    stepSinceTGTUpdate = 0
+    stepNum = -1 * minRBSize
+
+    episodeRewards = []
+    rollingReward = 0
+
+    # Copying over the weights
+    tq = tqdm()
+    # Work in progress
+    while True:
+        if test:
+            env.render()
+            time.sleep(0.05)
+        tq.update(1)
+        eps = epsDecay ** (stepNum/100)
+        if test:
+            eps = 0
+
+
+        if random() < eps:
+            action = env.robot.randomAction()
+        else:
+            actNum = model(torch.tensor(lastObs.state)).max(-1)[-1].item()
+            action = env.robot.actions[actNum]
+
+        obs  = env.robotStep(action[0], action[1])
+        rollingReward = obs.reward
+
+        # print(obs)
+        # # env.render()
+        # x = model(torch.Tensor(obs.state))
+        # # print(x)
+        #
+        episodeRewards.append(rollingReward)
+        #
+        # if stepSinceTGTUpdate > targetModelUpdate:
+        # # if env.done():
+        #     episodeRewards.append(rollingReward)
+        #     if test:
+        #         print(rollingReward)
+        #     print(episodeRewards)
+        #     rollingReward = 0
+        #     # env.reset()
+
+        obs.reward = obs.reward / 100
+
+        stepSinceTrain += 1
+        stepNum += 1
+        rb.insert(obs)
+        if (not test) and len(rb.buffer) >= minRBSize and stepSinceTrain > envStepsBeforeTrain:
+            stepSinceTGTUpdate += 1
+            loss = trainStep(rb.sample(sampleSize),model, targetModel, len(env.robot.actions), device)
+            wandb.log({"Loss": loss.detach().item(), "eps": eps, "Step Rewards:": np.mean(episodeRewards)}, step=stepNum)
+            stepSinceTrain = 0
+
+            if stepSinceTGTUpdate > targetModelUpdate:
+                print("Updating Target Model")
+                updateTGTModel(model, targetModel)
+                stepSinceTGTUpdate = 0
+                torch.save(targetModel.state_dict(), f"Models/{stepNum}.pth")
+                episodeRewards = []
+
+            # print(stepNum, loss.detach().item())
+            # import ipdb; ipdb.set_trace()
+
+
 
 if __name__ == '__main__':
-    # main(True, "Models/2623071.pth")
+    # modelTest(True, "Models/3797398.pth")
     main()
 
 
