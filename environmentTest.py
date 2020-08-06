@@ -19,5 +19,5 @@ if __name__ == '__main__':
 
         for i in range(steps):
             obs = env.robotStep(secNum, direction)
-            # print(obs)
+            print(obs)
             env.render()

@@ -736,6 +736,7 @@ class Environment:
 
         # Step
         limit = self.robot.step(sec, direction)
+
         self.currentState = []
         self.currentState.extend(robot.getAllSectionConfigurations())
         self.currentState.extend(self.points[0])
@@ -753,6 +754,8 @@ class Environment:
         if capPoint:
             reward += 200
             self.end = True
+
+        reward = reward * (-1)
 
         self.observation = Observation(self.prevState,
                                        self.currentState,

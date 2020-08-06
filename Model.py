@@ -117,6 +117,7 @@ def main(test=False, chkpt=None, device='cuda'):
     sampleSize = 750
 
     envStepsBeforeTrain = 100
+
     targetModelUpdate = 500
 
     epsMin = 0.01
@@ -305,8 +306,8 @@ def modelTest(test=False, chkpt=None, device='cuda'):
 
 
 if __name__ == '__main__':
-    # modelTest(True, "Models/3797398.pth")
-    main()
+    modelTest(True, "Models/7944256.pth")
+    # main()
 
 
 
