@@ -192,7 +192,7 @@ def main(test=False, chkpt=None, device='cuda'):
                 print("Updating Target Model")
                 updateTGTModel(model, targetModel)
                 stepSinceTGTUpdate = 0
-                torch.save(targetModel.state_dict(), f"Models/{stepNum}.pth")
+                torch.save(targetModel.state_dict(), f"/u/meharabd/research/CRLMachineLearningProject/Models/{stepNum}.pth")
                 episodeRewards = []
 
             # print(stepNum, loss.detach().item())
