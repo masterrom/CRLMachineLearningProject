@@ -37,9 +37,9 @@ class Model(nn.Module):
         self.numActions = numActions
 
         self.net = nn.Sequential(
-            nn.Linear(observationShape, 256),
+            nn.Linear(observationShape, 32),
             nn.ReLU(),
-            nn.Linear(256, numActions),
+            nn.Linear(32, numActions),
             nn.ReLU()
         )
 
@@ -82,15 +82,11 @@ def updateTGTModel(m, tgt):
 def main(test=False, chkpt=None):
 
     if not test:
-        wandb.init(project="MultiSection Continum", name="Reaching Task")
+        wandb.init(project="MultiSection Continum", name="Reaching Task 32 Per Layer")
 
     robot = Robot()
     robot.newSection()
     robot.newSection()
-    # robot.newSection()
-    # robot.newSection()
-    # robot.newSection()
-    # robot.newSection()
 
     env = Environment(robot)
     if test:
@@ -101,8 +97,7 @@ def main(test=False, chkpt=None):
 
     lastObs = env.getObservation()
 
-    # env.render()
-    # turtle.Screen().update()
+
     rb = ReplayBuffer()
 
     minRBSize = 10000
@@ -188,21 +183,6 @@ def main(test=False, chkpt=None):
             # import ipdb; ipdb.set_trace()
 
 
-
-
-    # model = Model()
-
-    # NOTE:Demo
-    '''
-    while True:
-        secNum = int(input("Enter SecNum: "))
-        direction = str(input("Enter direction: "))
-        steps = int(input("Enter number of steps: "))
-
-        for i in range(steps):
-            env.robotStep(secNum, direction)
-            env.render()
-    '''
 
 if __name__ == '__main__':
     # main(True, "Models/2623071.pth")
