@@ -79,7 +79,7 @@ def updateTGTModel(m, tgt):
     tgt.load_state_dict(m.state_dict())
 
 
-def main(test=False, chkpt=None, device='cuda:5'):
+def main(test=False, chkpt=None, device='cuda'):
 
     if not test:
         wandb.init(project="MultiSection Continum", name="Reaching Task 32 Per Layer")
