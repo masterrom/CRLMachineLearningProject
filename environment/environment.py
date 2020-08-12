@@ -494,11 +494,12 @@ class Environment:
         self.prevState.extend(robot.getAllSectionConfigurations())
         self.prevState.extend(self.points[0])
         # self.prevState.append(distance(self.points[0], robot.endEffectorPos()))
-
+        self.reward = 0
         self.currentState = self.prevState
         dist = distance(self.points[0], robot.endEffectorPos())
+        self.lastDist = dist
 
-        self.observation = Observation(self.prevState, self.prevState, -dist, 1, self.end)
+        self.observation = Observation(self.prevState, self.prevState, self.reward, 1, self.end)
 
     def drawTaskSpace(self):
         """
@@ -712,7 +713,7 @@ class Environment:
 
         self.points = []
         self.generatePoint()
-
+        self.reward = 0
         self.prevState = []
         self.prevState.extend(self.robot.getAllSectionConfigurations())
         self.prevState.extend(self.points[0])
@@ -743,23 +744,25 @@ class Environment:
 
         dist = distance(self.points[0], robot.endEffectorPos())
 
-
-        reward = -dist
+        if dist <= self.lastDist:
+            self.reward += 1
+        else:
+            self.reward -= 1
 
         if not limit:
-            reward -= 50
-
+            self.reward -= 1
+        self.lastDist = dist
         # Determine if a point was captured
         capPoint = self.pointCapture()
         if capPoint:
-            reward += 200
+            self.reward += 200
             self.end = True
 
         # reward = reward * (-1)
 
         self.observation = Observation(self.prevState,
                                        self.currentState,
-                                       reward,
+                                       self.reward,
                                        self.robot.actions.index((sec, direction)),
                                        self.end)
         # print(self.observation)

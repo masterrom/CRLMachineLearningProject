@@ -98,7 +98,7 @@ def main(test=False, chkpt=None, device='cuda'):
 
     robot = Robot()
     robot.newSection()
-    # robot.newSection()
+    robot.newSection()
 
     env = Environment(robot)
     if test:
