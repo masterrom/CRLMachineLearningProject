@@ -744,13 +744,13 @@ class Environment:
 
         dist = distance(self.points[0], robot.endEffectorPos())
 
-        if dist <= self.lastDist:
+        if dist < self.lastDist:
             self.reward += 1
         else:
             self.reward -= 1
 
         if not limit:
-            self.reward -= 1
+            self.reward -= 2
         self.lastDist = dist
         # Determine if a point was captured
         capPoint = self.pointCapture()
