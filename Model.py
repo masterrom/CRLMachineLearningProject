@@ -117,7 +117,6 @@ def main(test=False, chkpt=None, device='cuda'):
     sampleSize = 750
 
     envStepsBeforeTrain = 100
-
     targetModelUpdate = 500
 
     epsMin = 0.01
@@ -132,7 +131,13 @@ def main(test=False, chkpt=None, device='cuda'):
     updateTGTModel(model, targetModel)
 
     stepSinceTrain = 0
+    # stepSinceTrain keeps track of the number of steps since the last main network training
+    # in this case main network updates after every envStepsBeforeTrain
+
     stepSinceTGTUpdate = 0
+    # stepSinceTGTUpdate keeps track of the number of steps since the last target network update (ie transfering main network weights)
+    # in this case the target network updates after every targetModelUpdate
+
     stepNum = -1 * minRBSize
 
     episodeRewards = []
@@ -146,7 +151,7 @@ def main(test=False, chkpt=None, device='cuda'):
             env.render()
             time.sleep(0.05)
         tq.update(1)
-        eps = epsDecay ** (stepNum/100)
+        eps = epsDecay ** (stepNum/10)
         if test:
             eps = 0
 
