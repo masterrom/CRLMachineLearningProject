@@ -4,10 +4,10 @@ if __name__ == '__main__':
 
     robot = Robot()
     robot.newSection()
-    # robot.newSection()
+    robot.newSection()
 
     env = Environment(robot)
-    env.staticPoint([-9.966711079379195, 99.3346653975306])
+    # env.staticPoint([-9.966711079379195, 99.3346653975306])
 
     env.render()
 

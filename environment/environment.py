@@ -495,6 +495,7 @@ class Environment:
         self.prevState.extend(self.points[0])
         # self.prevState.append(distance(self.points[0], robot.endEffectorPos()))
         self.reward = 0
+        self.cReward = 0
         self.currentState = self.prevState
         dist = distance(self.points[0], robot.endEffectorPos())
         self.lastDist = dist
@@ -745,20 +746,21 @@ class Environment:
         dist = distance(self.points[0], robot.endEffectorPos())
 
         if dist < self.lastDist:
-            self.reward += 1
+            self.reward = 2
         else:
-            self.reward -= 1
+            self.reward = -1
 
         if not limit:
-            self.reward -= 2
+            self.reward = -2
         self.lastDist = dist
         # Determine if a point was captured
         capPoint = self.pointCapture()
         if capPoint:
-            self.reward += 200
+            self.reward = 200
             self.end = True
 
         # reward = reward * (-1)
+        self.cReward += self.reward
 
         self.observation = Observation(self.prevState,
                                        self.currentState,

@@ -49,9 +49,9 @@ class Model(nn.Module):
         self.numActions = numActions
 
         self.net = nn.Sequential(
-            nn.Linear(observationShape, 32),
+            nn.Linear(observationShape, 64),
             nn.ReLU(),
-            nn.Linear(32, numActions),
+            nn.Linear(64, numActions),
             nn.ReLU()
         )
 
@@ -102,10 +102,10 @@ def main(test=False, chkpt=None, device='cuda'):
 
     env = Environment(robot)
     if test:
-        env.staticPoint([-9.966711079379195, 99.3346653975306])
+        # env.staticPoint([-9.966711079379195, 99.3346653975306])
         env.render()
-    else:
-        env.staticPoint([-9.966711079379195, 99.3346653975306])
+    # else:
+    #     env.staticPoint([-9.966711079379195, 99.3346653975306])
 
     lastObs = env.getObservation()
 
@@ -177,9 +177,9 @@ def main(test=False, chkpt=None, device='cuda'):
         #     # env.reset()
         if env.done():
             env.reset()
-            env.staticPoint([-9.966711079379195, 99.3346653975306])
+            # env.staticPoint([-9.966711079379195, 99.3346653975306])
 
-        obs.reward = obs.reward / 100
+        # obs.reward = obs.reward / 100
 
         stepSinceTrain += 1
         stepNum += 1
