@@ -114,10 +114,13 @@ def main(test=False, chkpt=None, device='cuda'):
 
     memorySize = 500000
     minRBSize = 20000
+
     sampleSize = 750
 
-    envStepsBeforeTrain = 100
+    envStepsBeforeTrain = 250
+
     targetModelUpdate = 500
+
 
     epsMin = 0.01
     epsDecay = 0.99999
@@ -157,6 +160,7 @@ def main(test=False, chkpt=None, device='cuda'):
 
 
         if random() < eps:
+            print("Taking random action")
             action = env.robot.randomAction()
         else:
             actNum = model(torch.tensor(lastObs.state).to(device)).max(-1)[-1].item()

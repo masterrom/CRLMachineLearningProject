@@ -637,7 +637,7 @@ class Environment:
             c = distance(pos, tipPos)
 
             # print("C Val: ", c)
-            if c <= 2:
+            if c <= 10:
                 self.capPoints += 1
                 pCap = i
                 print("Captured Point: Points ", self.capPoints)
@@ -759,7 +759,7 @@ class Environment:
             self.reward = 200
             self.end = True
 
-        # reward = reward * (-1)
+        # self.reward = self.reward * (-1)
         self.cReward += self.reward
 
         self.observation = Observation(self.prevState,
