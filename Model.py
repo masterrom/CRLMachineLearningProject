@@ -74,7 +74,7 @@ def trainStep(stateTransitions, model, targetModel, numActions, device):
     model.opt.zero_grad()
     qVal = model(currentState)
     oneHotActions = F.one_hot(torch.LongTensor(actions), numActions).to(device)
-    gamma = 0.01
+    gamma = 1
 
     loss = ((rewards + gamma * qValNext - torch.sum(qVal * oneHotActions, -1)) ** 2).mean()
 
@@ -160,7 +160,7 @@ def main(test=False, chkpt=None, device='cuda'):
 
 
         if random() < eps:
-            print("Taking random action")
+            # print("Taking random action")
             action = env.robot.randomAction()
         else:
             actNum = model(torch.tensor(lastObs.state).to(device)).max(-1)[-1].item()
