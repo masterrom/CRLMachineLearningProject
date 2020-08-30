@@ -1,0 +1,24 @@
+{
+    "root": "/Users/master/Documents/School/Research/Snake/CRLMachineLearningProject",
+    "program": "<python with no main file>",
+    "git": {
+        "remote": "https://github.com/masterrom/CRLMachineLearningProject.git",
+        "commit": "fb12e8a872ebca144c27872ed351e335001a4301"
+    },
+    "email": "abdulwasay_mehar@live.com",
+    "startedAt": "2020-08-29T21:08:59.593651",
+    "host": "Master.local",
+    "username": "master",
+    "executable": "/usr/local/opt/python/bin/python3.7",
+    "os": "Darwin-19.6.0-x86_64-i386-64bit",
+    "python": "3.7.7",
+    "cpu_count": 8,
+    "args": [],
+    "state": "finished",
+    "jobType": null,
+    "mode": "run",
+    "name": "A2C - (1000 Steps)- Xavier INIT",
+    "project": "Continuum A2C",
+    "heartbeatAt": "2020-08-29T21:17:05.567686",
+    "exitcode": 0
+}

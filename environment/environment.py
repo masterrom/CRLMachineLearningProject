@@ -116,7 +116,7 @@ class section:
         self.currentAngle += 0.01
         if self.currentAngle >= self.leftLimit:
             self.currentAngle -= 0.01
-            print("Left angle limit reached", self.currentAngle)
+            # print("Left angle limit reached", self.currentAngle)
             return False
 
         if self.render:
@@ -138,7 +138,7 @@ class section:
         self.currentAngle -= 0.01
         if self.currentAngle <= -self.leftLimit:
             self.currentAngle += 0.01
-            print("Right angle limit reached", self.currentAngle)
+            # print("Right angle limit reached", self.currentAngle)
             return False
         if self.render:
             self.drawSection(self.currentAngle)
@@ -488,6 +488,7 @@ class Environment:
         # self.rewardTool = turtle.Turtle()
         # self.rewardTool.hideturtle()
         self.rewardTool = None
+        self.pointTool = None
          # self.drawReward()
 
         self.prevState = []
@@ -592,6 +593,9 @@ class Environment:
         self.rewardTool = turtle.Turtle()
         self.rewardTool.hideturtle()
 
+        self.pointTool = turtle.Turtle()
+        self.pointTool.hideturtle()
+
     def render(self):
         if self.wn is None:
             turtle.setup(800, 1000)
@@ -659,11 +663,12 @@ class Environment:
         robot maxSection - minSection and maxCurvature - minCurvature
         :return: (x, y)
         """
+
         maxHeight = len(self.robot.sections) * 100
         maxWidth = 100
 
         x = random.uniform(-maxWidth, maxWidth)
-        y = random.uniform(10, maxHeight)
+        y = random.uniform(100, maxHeight)
         point = [x,y]
         self.points.append(point)
 
@@ -694,8 +699,12 @@ class Environment:
         :return: None
         """
         p = self.points[0]
-        point = turtle.Turtle()
-        point.hideturtle()
+        point = self.pointTool
+        point.clear()
+
+        # point = turtle.Turtle()
+        # point.hideturtle()
+
         point.up()
 
         point.setpos(p[0], p[1])
@@ -712,7 +721,7 @@ class Environment:
         self.capPoints = 0
         self.robot.reset()
 
-        self.points = []
+        # self.points = []
         self.generatePoint()
         self.reward = 0
         self.prevState = []
@@ -750,8 +759,10 @@ class Environment:
         else:
             self.reward = -1
 
-        # if not limit:
-        #     self.reward = -2
+        if not limit:
+            self.reward = -2
+
+
         self.lastDist = dist
         # Determine if a point was captured
         capPoint = self.pointCapture()
