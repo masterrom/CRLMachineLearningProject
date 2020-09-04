@@ -13,24 +13,32 @@ import turtle
 import wandb
 from tqdm import tqdm
 
-
-
-
 class ReplayBuffer:
 
     def __init__(self, bufferSize=100000):
+        """
+        ReplayBuffer is to used to keep a list of timeSteps that the agent has taken in the environment
+        :param bufferSize: Int
+        """
         self.bufferSize = bufferSize
         self.buffer = [None]*bufferSize
         self.index = 0
-        # self.buffer = deque(maxlen=bufferSize)
 
     def insert(self, obs):
-        # self.buffer.append(obs)
+        """
+        insert is used to add an observation to the buffer
+        :param obs: Observation item
+        :return: None
+        """
         self.buffer[self.index % self.bufferSize] = obs
         self.index += 1
-        # self.bufsfer = self.buffer[-self.bufferSize:]
 
     def sample(self, numSample):
+        """
+        sample is used to pick numSamples from the buffer
+        :param numSample: int
+        :return: list of Observation Items
+        """
         # assert numSample <= len(self.buffer)
         assert numSample < min(self.index, self.bufferSize)
         # if numSample > min(self.index, self.bufferSize)
@@ -40,28 +48,46 @@ class ReplayBuffer:
         return sample(self.buffer, numSample)
 
 
-
-
 class Model(nn.Module):
     def __init__(self, observationShape, numActions):
+        """
+        Model is a generic class, generates a Neural Network that takes in input of size state, and outputs the
+        number of actions
+        :param observationShape: length of the state (int)
+        :param numActions: number of actions (int)
+        """
         super(Model, self).__init__()
         self.observationShape = observationShape
         self.numActions = numActions
 
         self.net = nn.Sequential(
-            nn.Linear(observationShape, 64),
+            nn.Linear(observationShape, 32),
             nn.ReLU(),
-            nn.Linear(64, numActions),
+            nn.Linear(32, numActions),
             nn.ReLU()
         )
 
         self.opt = optim.Adam(self.net.parameters(),lr=0.0001,)
 
     def forward(self, x):
+        """
+        Forward Pass of the network
+        :param x: state
+        :return: output of neural net
+        """
         return self.net(x)
 
 
 def trainStep(stateTransitions, model, targetModel, numActions, device):
+    """
+    trainStep computes the loss and preforms backpropagation
+    :param stateTransitions: list of states
+    :param model: Network 1 (Model)
+    :param targetModel: Network 2 (Model)
+    :param numActions: Number of actions (int)
+    :param device: (string)
+    :return: Loss (float)
+    """
     currentState = torch.stack([torch.Tensor(s.state) for s in stateTransitions]).to(device)
     rewards = torch.stack([torch.Tensor([s.reward]) for s in stateTransitions]).to(device)
     nextState = torch.stack([torch.Tensor(s.nextState) for s in stateTransitions]).to(device)
@@ -86,12 +112,24 @@ def trainStep(stateTransitions, model, targetModel, numActions, device):
 
     return loss
 
-# Copying over the weights from m to tgt
 def updateTGTModel(m, tgt):
+    """
+    updateTGTModel copies the weight of m into tgt
+    :param m: Network 1
+    :param tgt: Network 2
+    :return: None
+    """
     tgt.load_state_dict(m.state_dict())
 
 
 def main(test=False, chkpt=None, device='cuda'):
+    """
+    main is used to start and preform the training in non-render mode
+    :param test: Not required
+    :param chkpt: Not required
+    :param device: string (cuda or cpu)
+    :return: None
+    """
     # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     if not test:
         wandb.init(project="MultiSection Continum", name="Reaching Task 32 Per Layer")
@@ -167,6 +205,7 @@ def main(test=False, chkpt=None, device='cuda'):
             action = env.robot.actions[actNum]
 
         obs  = env.robotStep(action[0], action[1])
+
         rollingReward = obs.reward
 
         # print(obs)
@@ -211,6 +250,13 @@ def main(test=False, chkpt=None, device='cuda'):
 
 
 def modelTest(test=False, chkpt=None, device='cuda'):
+    """
+    modelTest is used to upload a saved model, and test out the results
+    :param test: Bool should be set to true
+    :param chkpt: string path of where the model exists
+    :param device: cuda or cpu
+    :return: None
+    """
     # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     if not test:
         wandb.init(project="MultiSection Continum", name="Reaching Task 32 Per Layer")
@@ -316,8 +362,8 @@ def modelTest(test=False, chkpt=None, device='cuda'):
 
 
 if __name__ == '__main__':
-    # modelTest(True, "Models/1214323.pth")
-    main()
+    modelTest(True, "ModelPlaying/Test 4/Models/5566009.pth")
+    # main()
 
 
 

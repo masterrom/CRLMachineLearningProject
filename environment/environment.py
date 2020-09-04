@@ -22,6 +22,12 @@ class Observation:
 
 
 def distance(a, b):
+    """
+    Computes a
+    :param a:
+    :param b:
+    :return:
+    """
     x = a[0] - b[0]
     y = a[1] - b[1]
     return math.sqrt(x ** 2 + y ** 2)
@@ -46,21 +52,11 @@ class section:
         self.transformations = []
         # Set of baseLocations and Angles
 
-        # self.section = turtle.Turtle()
-        # self.section.width(2)
-        # self.section.color('red')
         self.section = None
-
         self.render = False
-
-        # self.baseFrame = turtle.Turtle()
-        # self.endFrame = turtle.Turtle()
         self.baseFrame = self.endFrame = None
-
         self.curve = None
-        # self.curve = turtle.Turtle()
-        # self.curve.color('green')
-        # self.curve.hideturtle()
+
 
         self.sectionLen = sectionLen
         self.minSectionLen = sectionLen
@@ -70,9 +66,6 @@ class section:
         self.leftLimit = 1.8 * math.pi
         self.currentAngle = self.zero
         self.tipPos = (0, 0)
-
-        # self.drawSection(self.currentAngle)
-        # self.displayCurve()
 
         self.controls = {
             'l': self.stepLeft,
@@ -363,6 +356,11 @@ class Robot:
         return angles
 
     def getAllSectionConfigurations(self):
+        """
+        getAllSectionConfigurations is used to get the current curvature and length of
+        each section of the robot
+        :return:
+        """
         angles = self.getAllCurrentAngles()
         configs = []
         for i in range(len(self.sections)):
@@ -399,6 +397,10 @@ class Robot:
         return stepLimitReached
 
     def endEffectorPos(self):
+        """
+        endEffectorPos is used to determine where tip position of the robot is currently
+        :return: tuple of coordinates
+        """
         lastSection = self.sections[len(self.sections) - 1]
         transformations = self.getAllCurrentAngles()
         tipPos = lastSection.getTipPos(transformations[:len(self.sections) - 1])
@@ -406,10 +408,19 @@ class Robot:
         return tipPos
 
     def randomAction(self):
+        """
+        randomAction picks a random action to take for the robot
+        :return:
+        """
         action = randint(0, len(self.actions))
         return self.actions[action]
 
     def reset(self):
+        """
+        reset, will delete the old robot sections and generate a robot with the same
+        number of sections
+        :return: None
+        """
         currentSecs = len(self.sections)
         self.sections = []
         for i in range(currentSecs):
@@ -428,9 +439,14 @@ class Robot:
             # print('\t transformations:', transformations)
             sec.drawSection(transformations)
             # sec.displayCurve(transformations)
+            # sec.displayCurve(transformations)
 
     def buildRenderComponents(self):
-
+        """
+        buildRenderComponents is used to assign turtle tools to components
+        that are required to draw out the entire robot
+        :return: Nones
+        """
         for i in range(len(self.sections)):
             sec = self.sections[i]
             sec.section = turtle.Turtle()
@@ -450,6 +466,11 @@ class Robot:
             sec.curve.hideturtle()
 
     def genActionSet(self):
+        """
+        genActionSet is used to generate tuples of all the possible actions
+        where each element represents (secNum, action)
+        :return: None
+        """
         actions = []
         for i in range(len(self.sections)):
             for j in range(len(self.controls)):
@@ -468,14 +489,7 @@ class Environment:
         :param robot: Section
         """
         self.wn = None
-        # self.ground = turtle.Turtle()
-        # self.ground.hideturtle()
-        # self.taskSpace = {'dim': (100, 100),
-        #                   'tool': turtle.Turtle()}
-        # self.taskSpace['tool'].hideturtle()
-        #
-        # self.checkTipPoint = turtle.Turtle()
-        # self.checkTipPoint.hideturtle()
+
         self.ground = self.taskSpace = self.checkTipPoint = None
 
         self.end = False
@@ -485,16 +499,13 @@ class Environment:
         self.points = []
         self.generatePoint()
 
-        # self.rewardTool = turtle.Turtle()
-        # self.rewardTool.hideturtle()
         self.rewardTool = None
         self.pointTool = None
-         # self.drawReward()
 
         self.prevState = []
         self.prevState.extend(robot.getAllSectionConfigurations())
         self.prevState.extend(self.points[0])
-        # self.prevState.append(distance(self.points[0], robot.endEffectorPos()))
+
         self.reward = 0
         self.cReward = 0
         self.currentState = self.prevState
@@ -579,6 +590,11 @@ class Environment:
         self.rewardTool.write("Points: " + str(self.capPoints), align='center')
 
     def buildRenderComponents(self):
+        """
+        buildRenderComponents is used when render is enabled. Assigns turtle objects to each of the
+        corresponding tools
+        :return: None
+        """
         self.ground = turtle.Turtle()
         self.ground.hideturtle()
 
@@ -597,6 +613,10 @@ class Environment:
         self.pointTool.hideturtle()
 
     def render(self):
+        """
+        render is used to draw/update the current environment, and the configuration of the robot
+        :return:
+        """
         if self.wn is None:
             turtle.setup(800, 1000)
             self.wn = turtle.Screen()
@@ -621,17 +641,12 @@ class Environment:
     def pointCapture(self):
         """
         pointCapture checks if robot tipPosition is within a
-        0.5 radius of the un-captured Point. if so, accumulate
+        10 Point radius of the un-captured Point. if so, accumulate
         the points and generate a new random points
         :return: None
         """
         tipPos = self.robot.endEffectorPos()
-        # self.checkTipPoint.clear()
-        # self.checkTipPoint.up()
-        #
-        # # print("tipPos: ", tipPos)
-        # self.checkTipPoint.setpos(tipPos[0], tipPos[1])
-        # self.checkTipPoint.dot(3,'blue')
+
         pCap = None
         for i in range(len(self.points)):
             # Get Distance
@@ -655,6 +670,10 @@ class Environment:
 
     def getObservation(self):
         # Current State, reward
+        """
+        getter function for the last observation
+        :return: Observation item
+        """
         return self.observation
 
     def generatePoint(self):
@@ -672,24 +691,32 @@ class Environment:
         point = [x,y]
         self.points.append(point)
 
+        '''
+        Codes to Pick from the curvature of a single section
+        
+        angle = random.uniform(-2 * math.pi, 2 * math.pi)
+        maxArcLen = self.robot.maxSectionLen
+        minArcLen = self.robot.minSectionLen
 
+        arcLen = random.randint(minArcLen, maxArcLen)
+
+        radius = arcLen / angle
+
+        t = np.linspace(0, angle, arcLen)
+        x = radius * np.cos(t)
+        y = radius * np.sin(t)
+
+        point = [x[arcLen - 1] - radius, y[arcLen - 1]]
+        self.points.append(point)
+        '''
         return [x, y]
-        # angle = random.uniform(-2 * math.pi, 2 * math.pi)
-        # maxArcLen = self.robot.maxSectionLen
-        # minArcLen = self.robot.minSectionLen
-        #
-        # arcLen = random.randint(minArcLen, maxArcLen)
-        #
-        # radius = arcLen / angle
-        #
-        # t = np.linspace(0, angle, arcLen)
-        # x = radius * np.cos(t)
-        # y = radius * np.sin(t)
-        #
-        # point = [x[arcLen - 1] - radius, y[arcLen - 1]]
-        # self.points.append(point)
 
     def staticPoint(self, point):
+        """
+        staticPoint can be used to specify a goal point/position
+        :param point: int tuple of len 2
+        :return: None
+        """
         self.points = []
         self.points.append(point)
 
@@ -714,9 +741,17 @@ class Environment:
         point.up()
 
     def done(self):
+        """
+        dones is used to check if a point has been captured or not
+        :return: Boolean
+        """
         return self.end
 
     def reset(self):
+        """
+        reset function is used reset the robot configurations as well as the total rewards to 0.
+        :return: None
+        """
         self.end = False
         self.capPoints = 0
         self.robot.reset()

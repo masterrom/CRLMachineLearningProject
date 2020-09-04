@@ -2,20 +2,34 @@
 
 Play with the robot by running `./environment.py` in the `environment Folder`
 
-Actions:
-- l = Curve towards the left
-- r = Curve towards the right
-- e = extend the robot ( A little glitchy )
-- c = contract the robot ( glitchy )
-
 ## Documentation
-- run `pdoc environment.py --html --force` to compile documents
-- run  `pdoc environment.py --http localhost:3000` to host or can simply open up the html file
+- Simply Open `index.html` for all documentation
 
 ## Current Setup
-- Environment Holds a single Section Robot
-- Each step is taken through the environment
-    - Before taking each step, the previous state is saved
+- Multi-Section Configurable
+```
+robot = Robot() # New Robot instance
+robot.newSection() # Add a new Section
+robot.newSection() # Add a second Section
+
+env = Environment(robot) # Add robot to the environment
+```
+- Available Actions for each sections
+```
+l - increase curvature
+r - decrease curvature
+e - increase section length
+c - decrease section length
+```
+- Curvature : [2pi, -2pi]
+- sectionLen: [100, 120]
+
+- Curvature StepSize: 0.01
+- sectionLen StepSize: 1
  
-## TODO
-- Implement basic Model
+## Models
+- `Model.py` = DDQN
+- `a2c.py` = ActorCritic Network
+
+## Environment
+- `environment/environment.py`

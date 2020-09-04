@@ -1,0 +1,915 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.8.1" />
+<title>a2c API documentation</title>
+<meta name="description" content="" />
+<link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
+<link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
+<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>a2c</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">import argparse
+import math
+
+import gym
+import numpy as np
+from itertools import count
+from collections import namedtuple
+from environment.environment import Robot, Environment
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+from torch.distributions import Categorical
+from torch.distributions import Normal
+import wandb
+import time
+
+
+parser = argparse.ArgumentParser(description=&#39;PyTorch actor-critic example&#39;)
+parser.add_argument(&#39;--gamma&#39;, type=float, default=0.99, metavar=&#39;G&#39;,
+                    help=&#39;discount factor (default: 0.99)&#39;)
+parser.add_argument(&#39;--seed&#39;, type=int, default=543, metavar=&#39;N&#39;,
+                    help=&#39;random seed (default: 543)&#39;)
+parser.add_argument(&#39;--render&#39;, action=&#39;store_true&#39;,
+                    help=&#39;render the environment&#39;)
+parser.add_argument(&#39;--log-interval&#39;, type=int, default=10, metavar=&#39;N&#39;,
+                    help=&#39;interval between training status logs (default: 10)&#39;)
+# args = parser.parse_args()
+args = None
+
+
+
+robot = Robot()
+robot.newSection()
+robot.newSection()
+env = Environment(robot)
+
+
+SavedAction = namedtuple(&#39;SavedAction&#39;, [&#39;log_prob&#39;, &#39;value&#39;])
+wandb.init(project=&#34;Continuum A2C&#34;, name=&#34;A2C - (1000 Steps)- Xavier INIT Normalized&#34;)
+
+
+def stableSoftMax(x):
+    &#34;&#34;&#34;
+    stableSoftMax computes a normalized softmax
+    :param x: Tensor List
+    :return: Tensor List
+    &#34;&#34;&#34;
+    x = torch.exp(x - torch.max(x))
+    return x/torch.sum(x)
+
+
+class Normalizer():
+
+    def __init__(self, num_inputs):
+        &#34;&#34;&#34;
+        Normalizer class is used to normalize a given state of the environment.
+        This is done through determining a normal distribution of a given state
+        :param num_inputs: int
+        &#34;&#34;&#34;
+        self.n = torch.zeros(num_inputs)
+        self.mean = torch.zeros(num_inputs)
+        self.mean_diff = torch.zeros(num_inputs)
+        self.var = torch.zeros(num_inputs)
+
+    def observe(self, x):
+        &#34;&#34;&#34;
+        observe takes in a list, computes and stores the mean of the input
+        :param x: Tensor list
+        :return: None
+        &#34;&#34;&#34;
+        self.n += 1.
+        last_mean = self.mean.clone()
+        self.mean += (x-self.mean)/self.n
+        self.mean_diff += (x-last_mean)*(x-self.mean)
+        self.var = torch.clamp(self.mean_diff/self.n, min=1e-2)
+
+    def normalize(self, inputs):
+        &#34;&#34;&#34;
+        normalize is specific to the state of length 6, where the last 2 elements
+        are the coordinates of the goal point. The function normalized the first
+        4 elements based on their mean, and the coordinates are normalized based on
+        a 300x300 Box
+        :param inputs: State of length 6
+        :return: Normalized Tensor of the input
+        &#34;&#34;&#34;
+        configs = inputs[0:4]
+        point = inputs[4:]
+        self.observe(configs)
+        obs_std = torch.sqrt(self.var)
+        normConfigs = (configs - self.mean)/obs_std
+
+        normPoints = [point[0]/300, point[1]/300]
+
+        return torch.cat((normConfigs, torch.tensor(normPoints)))
+
+
+
+class Policy(nn.Module):
+    &#34;&#34;&#34;
+    Policy class implements both actor and critic in one model
+    &#34;&#34;&#34;
+    def __init__(self):
+        super(Policy, self).__init__()
+        self.affine1 = nn.Linear(6, 128)
+
+        # actor&#39;s layer
+        self.action_head = nn.Linear(128, 8)
+
+        # critic&#39;s layer
+        self.value_head = nn.Linear(128, 1)
+
+        #Xavier Initialization
+        torch.nn.init.xavier_normal_(self.affine1.weight)
+        torch.nn.init.xavier_normal_(self.action_head.weight)
+        torch.nn.init.xavier_normal_(self.value_head.weight)
+
+        # action &amp; reward buffer
+        self.saved_actions = []
+        self.rewards = []
+
+
+    def forward(self, input):
+        &#34;&#34;&#34;
+        forward of both actor and critic
+        :return: Output of both networks
+        &#34;&#34;&#34;
+
+        x = F.relu(self.affine1(input))
+        y = x.clone()
+
+        # actor: choses action to take from state s_t
+        # by returning probability of each action
+        action_prob = stableSoftMax(self.action_head(x))
+        # action_prob = F.softmax(self.action_head(x), dim=-1)
+
+        if torch.sum(action_prob.isnan()):
+            print(y)
+            print(action_prob)
+            print(input)
+            import ipdb; ipdb.set_trace()
+
+        # critic: evaluates being in the state s_t
+        state_values = self.value_head(x)
+
+        # return values for both actor and critic as a tuple of 2 values:
+        # 1. a list with the probability of each action over the action space
+        # 2. the value from state s_t
+        return action_prob, state_values
+
+
+model = Policy()
+optimizer = optim.Adam(model.parameters(), lr=1e-3)
+eps = np.finfo(np.float32).eps.item()
+
+norm = Normalizer(4)
+
+
+def select_action(state):
+    &#34;&#34;&#34;
+    select_action picks a action based on the probability distribution of the output
+    of the actor network
+    :param state: envrionment Tuple
+    :return: int
+    &#34;&#34;&#34;
+    state = torch.from_numpy(state).float()
+    probs, state_value = model(state)
+
+    # probs[probs != probs] = 0.0
+    if torch.sum(probs.isnan())&gt;= 1:
+        # import ipdb; ipdb.set_trace()
+        print(&#34;issue &#34;, torch.sum(probs.isnan()))
+
+    # create a categorical distribution over the list of probabilities of actions
+    m = Categorical(probs)
+
+
+    # and sample an action using the distribution
+    action = m.sample()
+
+    # save to action buffer
+    model.saved_actions.append(SavedAction(m.log_prob(action), state_value))
+
+    # import ipdb;
+    # ipdb.set_trace()
+
+    # the action to take (left or right)
+    return action.item()
+
+
+def finish_episode():
+    &#34;&#34;&#34;
+    finish_episode is the training section of the network. Is called when a
+    episode is finished. Training code. Calculates actor and critic loss and
+    performs backprop.
+    &#34;&#34;&#34;
+    R = 0
+    saved_actions = model.saved_actions
+    policy_losses = [] # list to save actor (policy) loss
+    value_losses = [] # list to save critic (value) loss
+    returns = [] # list to save the true values
+
+    # calculate the true value using rewards returned from the environment
+    for r in model.rewards[::-1]:
+        # calculate the discounted value
+        R = r + args.gamma * R
+        returns.insert(0, R)
+
+    returns = torch.tensor(returns)
+    returns = (returns - returns.mean()) / (returns.std() + eps)
+
+    for (log_prob, value), R in zip(saved_actions, returns):
+        advantage = R - value.item()
+
+        # calculate actor (policy) loss
+        policy_losses.append(-log_prob * advantage)
+
+        # calculate critic (value) loss using L1 smooth loss
+        value_losses.append(F.smooth_l1_loss(value, torch.tensor([R])))
+
+    # reset gradients
+    optimizer.zero_grad()
+
+    # sum up all the values of policy_losses and value_losses
+    loss = torch.stack(policy_losses).sum() + torch.stack(value_losses).sum()
+
+
+    # perform backprop
+    loss.backward()
+    optimizer.step()
+
+    # reset rewards and action buffer
+    del model.rewards[:]
+    del model.saved_actions[:]
+
+    return loss
+
+
+def main():
+    &#34;&#34;&#34;
+    main function will start the training episode, where within each episode
+    the robot can take atmost 1000 steps
+    :return: None
+    &#34;&#34;&#34;
+
+    args = parser.parse_args()
+    torch.manual_seed(args.seed)
+
+    running_reward = 10
+
+    # run inifinitely many episodes
+    for i_episode in count(1):
+
+        # reset environment and episode reward
+        env.reset()
+        state = env.observation
+
+        ep_reward = 0
+
+        # for each episode, only run 9999 steps so that we don&#39;t
+        # infinite loop while learning
+        for t in range(1, 1000):
+
+
+            # select action from policy
+            action = select_action(np.array(state.state))
+            action = env.robot.actions[action]
+
+            # take the action
+            # state, reward, done, _ = env.step(action)
+            obs = env.robotStep(action[0], action[1])
+            obs.state = norm.normalize(torch.tensor(obs.state))
+            obs.nextState = norm.normalize(torch.tensor(obs.nextState))
+
+            reward = obs.reward
+            done = obs.done
+
+            if args.render:
+                env.render()
+
+            model.rewards.append(reward)
+            # wandb.log({&#34;Actions&#34;: action, &#39;reward&#39;:reward}, step=t)
+            ep_reward += reward
+            if done:
+                break
+
+        print(&#34;End of Episode &#34;, i_episode)
+        # update cumulative reward
+        running_reward = 0.05 * ep_reward + (1 - 0.05) * running_reward
+
+        # perform backprop
+        loss = finish_episode()
+        wandb.log({&#34;Average Reward&#34;: running_reward, &#34;loss&#34;: loss.item()}, step=i_episode)
+
+        # torch.save(model.state_dict(), f&#34;/u/meharabd/research/CRLMachineLearningProject/Models/{i_episode}.pth&#34;)
+        torch.save(model.state_dict(),
+                   f&#34;/Users/master/Documents/School/Research/Snake/CRLMachineLearningProject/Models/episode-{i_episode}.pth&#34;)
+
+        # log results
+        if i_episode % args.log_interval == 0:
+            print(&#39;Episode {}\tLast reward: {:.2f}\tAverage reward: {:.2f}&#39;.format(
+                  i_episode, ep_reward, running_reward))
+
+        # check if we have &#34;solved&#34; the cart pole problem
+        # if running_reward &gt; env.spec.reward_threshold:
+        #     print(&#34;Solved! Running reward is now {} and &#34;
+        #           &#34;the last episode runs to {} time steps!&#34;.format(running_reward, t))
+        #     break
+
+
+
+def test(path):
+    &#34;&#34;&#34;
+    test function is used to upload a saved model, and test out the results
+    :param path: System string path
+    :return: None
+    &#34;&#34;&#34;
+    model.load_state_dict(torch.load(path, map_location=torch.device(&#39;cpu&#39;)))
+    env.reset()
+    state = env.observation
+
+    env.render()
+
+    while True:
+        action = select_action(np.array(state.state))
+        action = env.robot.actions[action]
+
+        env.robotStep(action[0], action[1])
+        env.render()
+
+
+
+if __name__ == &#39;__main__&#39;:
+
+    # env.reset()
+    # state = env.observation
+    # norm = Normalizer(4)
+    # import ipdb; ipdb.set_trace()
+    main()
+    # test(&#34;ModelPlaying/A2C 1/Models/episode-210.pth&#34;)
+    # test(&#34;Models/episode-65.pth&#34;)</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="a2c.finish_episode"><code class="name flex">
+<span>def <span class="ident">finish_episode</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>finish_episode is the training section of the network. Is called when a
+episode is finished. Training code. Calculates actor and critic loss and
+performs backprop.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def finish_episode():
+    &#34;&#34;&#34;
+    finish_episode is the training section of the network. Is called when a
+    episode is finished. Training code. Calculates actor and critic loss and
+    performs backprop.
+    &#34;&#34;&#34;
+    R = 0
+    saved_actions = model.saved_actions
+    policy_losses = [] # list to save actor (policy) loss
+    value_losses = [] # list to save critic (value) loss
+    returns = [] # list to save the true values
+
+    # calculate the true value using rewards returned from the environment
+    for r in model.rewards[::-1]:
+        # calculate the discounted value
+        R = r + args.gamma * R
+        returns.insert(0, R)
+
+    returns = torch.tensor(returns)
+    returns = (returns - returns.mean()) / (returns.std() + eps)
+
+    for (log_prob, value), R in zip(saved_actions, returns):
+        advantage = R - value.item()
+
+        # calculate actor (policy) loss
+        policy_losses.append(-log_prob * advantage)
+
+        # calculate critic (value) loss using L1 smooth loss
+        value_losses.append(F.smooth_l1_loss(value, torch.tensor([R])))
+
+    # reset gradients
+    optimizer.zero_grad()
+
+    # sum up all the values of policy_losses and value_losses
+    loss = torch.stack(policy_losses).sum() + torch.stack(value_losses).sum()
+
+
+    # perform backprop
+    loss.backward()
+    optimizer.step()
+
+    # reset rewards and action buffer
+    del model.rewards[:]
+    del model.saved_actions[:]
+
+    return loss</code></pre>
+</details>
+</dd>
+<dt id="a2c.main"><code class="name flex">
+<span>def <span class="ident">main</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>main function will start the training episode, where within each episode
+the robot can take atmost 1000 steps
+:return: None</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def main():
+    &#34;&#34;&#34;
+    main function will start the training episode, where within each episode
+    the robot can take atmost 1000 steps
+    :return: None
+    &#34;&#34;&#34;
+
+    args = parser.parse_args()
+    torch.manual_seed(args.seed)
+
+    running_reward = 10
+
+    # run inifinitely many episodes
+    for i_episode in count(1):
+
+        # reset environment and episode reward
+        env.reset()
+        state = env.observation
+
+        ep_reward = 0
+
+        # for each episode, only run 9999 steps so that we don&#39;t
+        # infinite loop while learning
+        for t in range(1, 1000):
+
+
+            # select action from policy
+            action = select_action(np.array(state.state))
+            action = env.robot.actions[action]
+
+            # take the action
+            # state, reward, done, _ = env.step(action)
+            obs = env.robotStep(action[0], action[1])
+            obs.state = norm.normalize(torch.tensor(obs.state))
+            obs.nextState = norm.normalize(torch.tensor(obs.nextState))
+
+            reward = obs.reward
+            done = obs.done
+
+            if args.render:
+                env.render()
+
+            model.rewards.append(reward)
+            # wandb.log({&#34;Actions&#34;: action, &#39;reward&#39;:reward}, step=t)
+            ep_reward += reward
+            if done:
+                break
+
+        print(&#34;End of Episode &#34;, i_episode)
+        # update cumulative reward
+        running_reward = 0.05 * ep_reward + (1 - 0.05) * running_reward
+
+        # perform backprop
+        loss = finish_episode()
+        wandb.log({&#34;Average Reward&#34;: running_reward, &#34;loss&#34;: loss.item()}, step=i_episode)
+
+        # torch.save(model.state_dict(), f&#34;/u/meharabd/research/CRLMachineLearningProject/Models/{i_episode}.pth&#34;)
+        torch.save(model.state_dict(),
+                   f&#34;/Users/master/Documents/School/Research/Snake/CRLMachineLearningProject/Models/episode-{i_episode}.pth&#34;)
+
+        # log results
+        if i_episode % args.log_interval == 0:
+            print(&#39;Episode {}\tLast reward: {:.2f}\tAverage reward: {:.2f}&#39;.format(
+                  i_episode, ep_reward, running_reward))</code></pre>
+</details>
+</dd>
+<dt id="a2c.select_action"><code class="name flex">
+<span>def <span class="ident">select_action</span></span>(<span>state)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>select_action picks a action based on the probability distribution of the output
+of the actor network
+:param state: envrionment Tuple
+:return: int</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def select_action(state):
+    &#34;&#34;&#34;
+    select_action picks a action based on the probability distribution of the output
+    of the actor network
+    :param state: envrionment Tuple
+    :return: int
+    &#34;&#34;&#34;
+    state = torch.from_numpy(state).float()
+    probs, state_value = model(state)
+
+    # probs[probs != probs] = 0.0
+    if torch.sum(probs.isnan())&gt;= 1:
+        # import ipdb; ipdb.set_trace()
+        print(&#34;issue &#34;, torch.sum(probs.isnan()))
+
+    # create a categorical distribution over the list of probabilities of actions
+    m = Categorical(probs)
+
+
+    # and sample an action using the distribution
+    action = m.sample()
+
+    # save to action buffer
+    model.saved_actions.append(SavedAction(m.log_prob(action), state_value))
+
+    # import ipdb;
+    # ipdb.set_trace()
+
+    # the action to take (left or right)
+    return action.item()</code></pre>
+</details>
+</dd>
+<dt id="a2c.stableSoftMax"><code class="name flex">
+<span>def <span class="ident">stableSoftMax</span></span>(<span>x)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>stableSoftMax computes a normalized softmax
+:param x: Tensor List
+:return: Tensor List</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def stableSoftMax(x):
+    &#34;&#34;&#34;
+    stableSoftMax computes a normalized softmax
+    :param x: Tensor List
+    :return: Tensor List
+    &#34;&#34;&#34;
+    x = torch.exp(x - torch.max(x))
+    return x/torch.sum(x)</code></pre>
+</details>
+</dd>
+<dt id="a2c.test"><code class="name flex">
+<span>def <span class="ident">test</span></span>(<span>path)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>test function is used to upload a saved model, and test out the results
+:param path: System string path
+:return: None</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test(path):
+    &#34;&#34;&#34;
+    test function is used to upload a saved model, and test out the results
+    :param path: System string path
+    :return: None
+    &#34;&#34;&#34;
+    model.load_state_dict(torch.load(path, map_location=torch.device(&#39;cpu&#39;)))
+    env.reset()
+    state = env.observation
+
+    env.render()
+
+    while True:
+        action = select_action(np.array(state.state))
+        action = env.robot.actions[action]
+
+        env.robotStep(action[0], action[1])
+        env.render()</code></pre>
+</details>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="a2c.Normalizer"><code class="flex name class">
+<span>class <span class="ident">Normalizer</span></span>
+<span>(</span><span>num_inputs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Normalizer class is used to normalize a given state of the environment.
+This is done through determining a normal distribution of a given state
+:param num_inputs: int</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Normalizer():
+
+    def __init__(self, num_inputs):
+        &#34;&#34;&#34;
+        Normalizer class is used to normalize a given state of the environment.
+        This is done through determining a normal distribution of a given state
+        :param num_inputs: int
+        &#34;&#34;&#34;
+        self.n = torch.zeros(num_inputs)
+        self.mean = torch.zeros(num_inputs)
+        self.mean_diff = torch.zeros(num_inputs)
+        self.var = torch.zeros(num_inputs)
+
+    def observe(self, x):
+        &#34;&#34;&#34;
+        observe takes in a list, computes and stores the mean of the input
+        :param x: Tensor list
+        :return: None
+        &#34;&#34;&#34;
+        self.n += 1.
+        last_mean = self.mean.clone()
+        self.mean += (x-self.mean)/self.n
+        self.mean_diff += (x-last_mean)*(x-self.mean)
+        self.var = torch.clamp(self.mean_diff/self.n, min=1e-2)
+
+    def normalize(self, inputs):
+        &#34;&#34;&#34;
+        normalize is specific to the state of length 6, where the last 2 elements
+        are the coordinates of the goal point. The function normalized the first
+        4 elements based on their mean, and the coordinates are normalized based on
+        a 300x300 Box
+        :param inputs: State of length 6
+        :return: Normalized Tensor of the input
+        &#34;&#34;&#34;
+        configs = inputs[0:4]
+        point = inputs[4:]
+        self.observe(configs)
+        obs_std = torch.sqrt(self.var)
+        normConfigs = (configs - self.mean)/obs_std
+
+        normPoints = [point[0]/300, point[1]/300]
+
+        return torch.cat((normConfigs, torch.tensor(normPoints)))</code></pre>
+</details>
+<h3>Methods</h3>
+<dl>
+<dt id="a2c.Normalizer.normalize"><code class="name flex">
+<span>def <span class="ident">normalize</span></span>(<span>self, inputs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>normalize is specific to the state of length 6, where the last 2 elements
+are the coordinates of the goal point. The function normalized the first
+4 elements based on their mean, and the coordinates are normalized based on
+a 300x300 Box
+:param inputs: State of length 6
+:return: Normalized Tensor of the input</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def normalize(self, inputs):
+    &#34;&#34;&#34;
+    normalize is specific to the state of length 6, where the last 2 elements
+    are the coordinates of the goal point. The function normalized the first
+    4 elements based on their mean, and the coordinates are normalized based on
+    a 300x300 Box
+    :param inputs: State of length 6
+    :return: Normalized Tensor of the input
+    &#34;&#34;&#34;
+    configs = inputs[0:4]
+    point = inputs[4:]
+    self.observe(configs)
+    obs_std = torch.sqrt(self.var)
+    normConfigs = (configs - self.mean)/obs_std
+
+    normPoints = [point[0]/300, point[1]/300]
+
+    return torch.cat((normConfigs, torch.tensor(normPoints)))</code></pre>
+</details>
+</dd>
+<dt id="a2c.Normalizer.observe"><code class="name flex">
+<span>def <span class="ident">observe</span></span>(<span>self, x)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>observe takes in a list, computes and stores the mean of the input
+:param x: Tensor list
+:return: None</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def observe(self, x):
+    &#34;&#34;&#34;
+    observe takes in a list, computes and stores the mean of the input
+    :param x: Tensor list
+    :return: None
+    &#34;&#34;&#34;
+    self.n += 1.
+    last_mean = self.mean.clone()
+    self.mean += (x-self.mean)/self.n
+    self.mean_diff += (x-last_mean)*(x-self.mean)
+    self.var = torch.clamp(self.mean_diff/self.n, min=1e-2)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="a2c.Policy"><code class="flex name class">
+<span>class <span class="ident">Policy</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Policy class implements both actor and critic in one model</p>
+<p>Initializes internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Policy(nn.Module):
+    &#34;&#34;&#34;
+    Policy class implements both actor and critic in one model
+    &#34;&#34;&#34;
+    def __init__(self):
+        super(Policy, self).__init__()
+        self.affine1 = nn.Linear(6, 128)
+
+        # actor&#39;s layer
+        self.action_head = nn.Linear(128, 8)
+
+        # critic&#39;s layer
+        self.value_head = nn.Linear(128, 1)
+
+        #Xavier Initialization
+        torch.nn.init.xavier_normal_(self.affine1.weight)
+        torch.nn.init.xavier_normal_(self.action_head.weight)
+        torch.nn.init.xavier_normal_(self.value_head.weight)
+
+        # action &amp; reward buffer
+        self.saved_actions = []
+        self.rewards = []
+
+
+    def forward(self, input):
+        &#34;&#34;&#34;
+        forward of both actor and critic
+        :return: Output of both networks
+        &#34;&#34;&#34;
+
+        x = F.relu(self.affine1(input))
+        y = x.clone()
+
+        # actor: choses action to take from state s_t
+        # by returning probability of each action
+        action_prob = stableSoftMax(self.action_head(x))
+        # action_prob = F.softmax(self.action_head(x), dim=-1)
+
+        if torch.sum(action_prob.isnan()):
+            print(y)
+            print(action_prob)
+            print(input)
+            import ipdb; ipdb.set_trace()
+
+        # critic: evaluates being in the state s_t
+        state_values = self.value_head(x)
+
+        # return values for both actor and critic as a tuple of 2 values:
+        # 1. a list with the probability of each action over the action space
+        # 2. the value from state s_t
+        return action_prob, state_values</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="a2c.Policy.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, input) -> Callable[..., Any]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>forward of both actor and critic
+:return: Output of both networks</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, input):
+    &#34;&#34;&#34;
+    forward of both actor and critic
+    :return: Output of both networks
+    &#34;&#34;&#34;
+
+    x = F.relu(self.affine1(input))
+    y = x.clone()
+
+    # actor: choses action to take from state s_t
+    # by returning probability of each action
+    action_prob = stableSoftMax(self.action_head(x))
+    # action_prob = F.softmax(self.action_head(x), dim=-1)
+
+    if torch.sum(action_prob.isnan()):
+        print(y)
+        print(action_prob)
+        print(input)
+        import ipdb; ipdb.set_trace()
+
+    # critic: evaluates being in the state s_t
+    state_values = self.value_head(x)
+
+    # return values for both actor and critic as a tuple of 2 values:
+    # 1. a list with the probability of each action over the action space
+    # 2. the value from state s_t
+    return action_prob, state_values</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="a2c.SavedAction"><code class="flex name class">
+<span>class <span class="ident">SavedAction</span></span>
+<span>(</span><span>log_prob, value)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>SavedAction(log_prob, value)</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>builtins.tuple</li>
+</ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="a2c.SavedAction.log_prob"><code class="name">var <span class="ident">log_prob</span></code></dt>
+<dd>
+<div class="desc"><p>Alias for field number 0</p></div>
+</dd>
+<dt id="a2c.SavedAction.value"><code class="name">var <span class="ident">value</span></code></dt>
+<dd>
+<div class="desc"><p>Alias for field number 1</p></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="a2c.finish_episode" href="#a2c.finish_episode">finish_episode</a></code></li>
+<li><code><a title="a2c.main" href="#a2c.main">main</a></code></li>
+<li><code><a title="a2c.select_action" href="#a2c.select_action">select_action</a></code></li>
+<li><code><a title="a2c.stableSoftMax" href="#a2c.stableSoftMax">stableSoftMax</a></code></li>
+<li><code><a title="a2c.test" href="#a2c.test">test</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="a2c.Normalizer" href="#a2c.Normalizer">Normalizer</a></code></h4>
+<ul class="">
+<li><code><a title="a2c.Normalizer.normalize" href="#a2c.Normalizer.normalize">normalize</a></code></li>
+<li><code><a title="a2c.Normalizer.observe" href="#a2c.Normalizer.observe">observe</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="a2c.Policy" href="#a2c.Policy">Policy</a></code></h4>
+<ul class="">
+<li><code><a title="a2c.Policy.forward" href="#a2c.Policy.forward">forward</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="a2c.SavedAction" href="#a2c.SavedAction">SavedAction</a></code></h4>
+<ul class="">
+<li><code><a title="a2c.SavedAction.log_prob" href="#a2c.SavedAction.log_prob">log_prob</a></code></li>
+<li><code><a title="a2c.SavedAction.value" href="#a2c.SavedAction.value">value</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.8.1</a>.</p>
+</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+</body>
+</html>

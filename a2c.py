@@ -16,7 +16,6 @@ from torch.distributions import Normal
 import wandb
 import time
 
-# Cart Pole
 
 parser = argparse.ArgumentParser(description='PyTorch actor-critic example')
 parser.add_argument('--gamma', type=float, default=0.99, metavar='G',
@@ -30,37 +29,47 @@ parser.add_argument('--log-interval', type=int, default=10, metavar='N',
 args = parser.parse_args()
 
 
-# env = gym.make('CartPole-v0')
-# env.seed(args.seed)
 
 robot = Robot()
 robot.newSection()
 robot.newSection()
-
 env = Environment(robot)
-
 
 torch.manual_seed(args.seed)
 
-
 SavedAction = namedtuple('SavedAction', ['log_prob', 'value'])
-
-wandb.init(project="Continuum A2C", name="A2C - (1000 Steps)- Xavier INIT")
+wandb.init(project="Continuum A2C", name="A2C - (1000 Steps)- Xavier INIT Normalized")
 
 
 def stableSoftMax(x):
+    """
+    stableSoftMax computes a normalized softmax
+    :param x: Tensor List
+    :return: Tensor List
+    """
     x = torch.exp(x - torch.max(x))
     return x/torch.sum(x)
 
 
 class Normalizer():
+
     def __init__(self, num_inputs):
+        """
+        Normalizer class is used to normalize a given state of the environment.
+        This is done through determining a normal distribution of a given state
+        :param num_inputs: int
+        """
         self.n = torch.zeros(num_inputs)
         self.mean = torch.zeros(num_inputs)
         self.mean_diff = torch.zeros(num_inputs)
         self.var = torch.zeros(num_inputs)
 
     def observe(self, x):
+        """
+        observe takes in a list, computes and stores the mean of the input
+        :param x: Tensor list
+        :return: None
+        """
         self.n += 1.
         last_mean = self.mean.clone()
         self.mean += (x-self.mean)/self.n
@@ -68,13 +77,29 @@ class Normalizer():
         self.var = torch.clamp(self.mean_diff/self.n, min=1e-2)
 
     def normalize(self, inputs):
+        """
+        normalize is specific to the state of length 6, where the last 2 elements
+        are the coordinates of the goal point. The function normalized the first
+        4 elements based on their mean, and the coordinates are normalized based on
+        a 300x300 Box
+        :param inputs: State of length 6
+        :return: Normalized Tensor of the input
+        """
+        configs = inputs[0:4]
+        point = inputs[4:]
+        self.observe(configs)
         obs_std = torch.sqrt(self.var)
-        return (inputs - self.mean)/obs_std
+        normConfigs = (configs - self.mean)/obs_std
+
+        normPoints = [point[0]/300, point[1]/300]
+
+        return torch.cat((normConfigs, torch.tensor(normPoints)))
+
 
 
 class Policy(nn.Module):
     """
-    implements both actor and critic in one model
+    Policy class implements both actor and critic in one model
     """
     def __init__(self):
         super(Policy, self).__init__()
@@ -91,15 +116,15 @@ class Policy(nn.Module):
         torch.nn.init.xavier_normal_(self.action_head.weight)
         torch.nn.init.xavier_normal_(self.value_head.weight)
 
-
-
         # action & reward buffer
         self.saved_actions = []
         self.rewards = []
 
+
     def forward(self, input):
         """
         forward of both actor and critic
+        :return: Output of both networks
         """
 
         x = F.relu(self.affine1(input))
@@ -107,8 +132,8 @@ class Policy(nn.Module):
 
         # actor: choses action to take from state s_t
         # by returning probability of each action
-        # action_prob = stableSoftMax(self.action_head(x))
-        action_prob = F.softmax(self.action_head(x), dim=-1)
+        action_prob = stableSoftMax(self.action_head(x))
+        # action_prob = F.softmax(self.action_head(x), dim=-1)
 
         if torch.sum(action_prob.isnan()):
             print(y)
@@ -129,9 +154,16 @@ model = Policy()
 optimizer = optim.Adam(model.parameters(), lr=1e-3)
 eps = np.finfo(np.float32).eps.item()
 
+norm = Normalizer(4)
 
 
 def select_action(state):
+    """
+    select_action picks a action based on the probability distribution of the output
+    of the actor network
+    :param state: envrionment Tuple
+    :return: int
+    """
     state = torch.from_numpy(state).float()
     probs, state_value = model(state)
 
@@ -159,7 +191,9 @@ def select_action(state):
 
 def finish_episode():
     """
-    Training code. Calculates actor and critic loss and performs backprop.
+    finish_episode is the training section of the network. Is called when a
+    episode is finished. Training code. Calculates actor and critic loss and
+    performs backprop.
     """
     R = 0
     saved_actions = model.saved_actions
@@ -204,6 +238,13 @@ def finish_episode():
 
 
 def main():
+    """
+    main function will start the training episode, where within each episode
+    the robot can take atmost 1000 steps
+    :return: None
+    """
+
+    args = parser.parse_args()
 
 
     running_reward = 10
@@ -229,6 +270,9 @@ def main():
             # take the action
             # state, reward, done, _ = env.step(action)
             obs = env.robotStep(action[0], action[1])
+            obs.state = norm.normalize(torch.tensor(obs.state))
+            obs.nextState = norm.normalize(torch.tensor(obs.nextState))
+
             reward = obs.reward
             done = obs.done
 
@@ -267,6 +311,11 @@ def main():
 
 
 def test(path):
+    """
+    test function is used to upload a saved model, and test out the results
+    :param path: System string path
+    :return: None
+    """
     model.load_state_dict(torch.load(path, map_location=torch.device('cpu')))
     env.reset()
     state = env.observation
@@ -284,9 +333,10 @@ def test(path):
 
 if __name__ == '__main__':
 
-    env.reset()
-    state = env.observation
-    norm = Normalizer(6)
-    import ipdb; ipdb.set_trace()
+    # env.reset()
+    # state = env.observation
+    # norm = Normalizer(4)
+    # import ipdb; ipdb.set_trace()
     main()
-# test("ModelPlaying/A2C 3/Models/episode-173.pth")
+    # test("ModelPlaying/A2C 1/Models/episode-210.pth")
+    # test("Models/episode-65.pth")
