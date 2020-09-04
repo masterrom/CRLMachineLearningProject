@@ -1,6 +1,6 @@
 # CRLMachineLearningProject
 
-Play with the robot by running `./environment.py` in the `environment Folder`
+Play with the robot by running `./environmentTest.py`
 
 ## Documentation
 - Simply Open `index.html` for all documentation
